@@ -1,0 +1,17 @@
+{
+	"name": "babyschedulebot",
+	"version": "1.0.0",
+	"main": "secondfile.py",
+	"license": "MIT",
+	"scripts": {
+		"start": "nodemon main.py"
+	},
+	"dependencies": {
+		"nodemon": "^3.0.3"
+	},
+	"nodemonConfig": {
+		"ignore": [
+			"*.json"
+		]
+	}
+}
