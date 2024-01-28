@@ -4,7 +4,7 @@
 	"main": "secondfile.py",
 	"license": "MIT",
 	"scripts": {
-		"start": "nodemon main.py"
+		"start": "nodemon ./src/main.py"
 	},
 	"dependencies": {
 		"nodemon": "^3.0.3"
