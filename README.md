@@ -40,7 +40,7 @@ _Description..._
    or
 
    ```bash
-     python .\\src\\main.py
+     python .\src\main.py
    ```
 
 # Features
@@ -61,5 +61,3 @@ Contributions are welcome! If you find any issues or have suggestions for improv
 # License
 
 This project is licensed under the MIT License.
-
-Feel free to modify this template to suit your specific weather app made with Vite, React, Redux, and Mantine.
