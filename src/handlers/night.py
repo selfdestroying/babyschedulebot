@@ -1,10 +1,17 @@
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import (
+    Message,
+    CallbackQuery,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+    KeyboardButton,
+)
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from db.schedule import write_day_info
-from keyboards.rate import get_rate_kb
 
+from db.schedule import write_day_info
+from keyboards.menu import get_main_menu_kb
+from keyboards.rate import get_rate_kb
 from locales.ru import TEXT
 from models.DayInfo import DayInfo
 from utils.utils import calculate_time_difference
@@ -26,6 +33,7 @@ async def end_night_sleep_time(message: Message, state: FSMContext):
     await state.set_state(Night.end_night_sleep_time)
 
 
+# TODO: Add time validation
 @router.message(
     Night.start_night_sleep_time,
     F.text,
@@ -35,6 +43,7 @@ async def start_night_sleep_time_answer(message: Message, state: FSMContext):
     await message.answer("Отмечено начало ночного сна")
 
 
+# TODO: Add time validation
 @router.message(
     Night.end_night_sleep_time,
     F.text,
@@ -42,7 +51,9 @@ async def start_night_sleep_time_answer(message: Message, state: FSMContext):
 async def start_night_sleep_time_answer(message: Message, state: FSMContext):
     await state.update_data(end_night_sleep_time=message.text)
     await state.set_state(Night.night_rating)
-    await message.answer("Отмечено окончание ночного сна")
+    await message.answer(
+        "Отмечено окончание ночного сна", reply_markup=ReplyKeyboardRemove()
+    )
     await message.answer(TEXT["ru"]["rate"], reply_markup=get_rate_kb())
 
 
@@ -51,7 +62,10 @@ async def start_night_sleep_time_answer(message: Message, state: FSMContext):
     F.data.in_(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]),
 )
 async def night_rating(call: CallbackQuery, state: FSMContext):
-    await call.message.edit_text("Спасибо за оценку! \nВаша оценка: " + str(call.data))
+    await call.message.edit_text(
+        "Спасибо за оценку! \nВаша оценка: " + str(call.data),
+        reply_markup=get_main_menu_kb(),
+    )
     data = await state.get_data()
     start_night_sleep_time = data["start_night_sleep_time"]
     end_night_sleep_time = data["end_night_sleep_time"]
@@ -71,4 +85,12 @@ async def night_rating(call: CallbackQuery, state: FSMContext):
 @router.message(F.text.lower() == "отметить начало ночного сна 🌃")
 async def start_night_sleep_time(message: Message, state: FSMContext):
     await state.set_state(Night.start_night_sleep_time)
-    await message.answer(f"Когда вы уснули? (Введите время в формате ЧЧ:ММ)")
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="Отметить окончание ночного сна 🌅")]],
+        one_time_keyboard=True,
+        resize_keyboard=True,
+    )
+    await message.answer(
+        f"Когда вы уснули? (Введите время в формате ЧЧ:ММ)",
+        reply_markup=keyboard,
+    )

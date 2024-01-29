@@ -29,6 +29,7 @@ async def day_sleep_time(message: Message, state: FSMContext):
     await state.set_state(Day.fall_asleep_time)
 
 
+# TODO: Add time validation
 @router.message(Day.fall_asleep_time)
 async def fall_asleep_time(message: Message, state: FSMContext):
     i = (await state.get_data())["activity_count"]

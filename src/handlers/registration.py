@@ -13,6 +13,7 @@ from models.User import User
 router = Router()
 
 
+# TODO: replace all code below with aiogram-dialog
 class UserData(StatesGroup):
     user_problem = State()
     child_gender = State()
@@ -49,6 +50,7 @@ async def child_name(message: Message, state: FSMContext):
     await message.answer(TEXT["ru"]["ask_child_age"])
 
 
+# TODO: Add age validation
 @router.message(UserData.child_age)
 async def child_age(message: Message, state: FSMContext):
     await state.update_data(child_age=message.text)
@@ -63,6 +65,7 @@ async def foodtype(message: Message, state: FSMContext):
     await message.answer(TEXT["ru"]["ask_user_phone"])
 
 
+# TODO: Add phone number validation
 @router.message(UserData.user_phone)
 async def user_phone(message: Message, state: FSMContext):
     await state.update_data(user_phone=message.text)
@@ -70,6 +73,7 @@ async def user_phone(message: Message, state: FSMContext):
     await message.answer(TEXT["ru"]["ask_user_email"])
 
 
+# TODO: Add email validation
 @router.message(UserData.user_email)
 async def user_email(message: Message, state: FSMContext):
     await state.update_data(user_email=message.text)
