@@ -1,6 +1,5 @@
-from pydantic import BaseModel
-
 from models.Sleep import Sleep
+from pydantic import BaseModel
 
 
 class DayInfo(BaseModel):

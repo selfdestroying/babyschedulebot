@@ -1,12 +1,9 @@
-import datetime
-import json
-from aiogram import Router, F
+from aiogram import F, Router
+from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message
-from aiogram.fsm.context import FSMContext
 from db.schedule import add_sleep
 from models.Sleep import Sleep
-
 from utils.utils import calculate_time_difference
 
 router = Router()
@@ -25,7 +22,7 @@ async def day_sleep_time(message: Message, state: FSMContext):
         await state.update_data(activity_count=i)
     else:
         i = data["activity_count"]
-    await message.answer(f"Когда вы уснули? (Введите время в формате ЧЧ:ММ)")
+    await message.answer("Когда вы уснули? (Введите время в формате ЧЧ:ММ)")
     await state.set_state(Day.fall_asleep_time)
 
 
@@ -34,7 +31,7 @@ async def day_sleep_time(message: Message, state: FSMContext):
 async def fall_asleep_time(message: Message, state: FSMContext):
     i = (await state.get_data())["activity_count"]
     await state.update_data(fall_asleep_time=message.text)
-    await message.answer(f"Когда вы проснулись? (Введите время в формате ЧЧ:ММ)")
+    await message.answer("Когда вы проснулись? (Введите время в формате ЧЧ:ММ)")
     await state.set_state(Day.wake_up_time)
 
 

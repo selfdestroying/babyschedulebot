@@ -1,12 +1,11 @@
-from aiogram import Router, F
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import Message, CallbackQuery
+from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import CallbackQuery, Message
 from db.user import save_user_data
-
-from locales.ru import TEXT
 from keyboards.child_gender import get_child_gender_kb
 from keyboards.menu import get_main_menu_kb
+from locales.ru import TEXT
 from models.Child import Child
 from models.User import User
 
@@ -37,7 +36,9 @@ async def user_problem(message: Message, state: FSMContext) -> None:
 
 @router.callback_query(UserData.child_gender, F.data.in_(["male", "female"]))
 async def child_gender(call: CallbackQuery, state: FSMContext):
-    await state.update_data(child_gender=call.data)
+    await state.update_data(
+        child_gender="Мальчик" if call.data == "male" else "Девочка"
+    )
     await state.set_state(UserData.child_name)
     await call.message.edit_text(TEXT["ru"]["ask_child_name"])
     await call.answer()

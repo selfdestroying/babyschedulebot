@@ -3,13 +3,10 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from aiogram.utils.markdown import hbold
-
-
 from db.user import get_user_by_id
 from handlers.registration import UserData
 from keyboards.menu import get_main_menu_kb
 from locales.ru import TEXT
-
 
 router = Router()
 

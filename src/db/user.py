@@ -1,6 +1,8 @@
-from pydantic import BaseModel
 import json
+
+from models.DayInfo import DayInfo
 from models.User import User
+from pydantic import BaseModel
 
 
 def get_users():

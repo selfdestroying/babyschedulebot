@@ -1,10 +1,10 @@
 from datetime import datetime
 
 
-def calculate_time_difference(start_time, end_time):
+def calculate_time_difference(start: str, end: str) -> int:
     # Define the time format for parsing
-    start_time = datetime.strptime(start_time, "%H:%M")
-    end_time = datetime.strptime(end_time, "%H:%M")
+    start_time: datetime = datetime.strptime(start, "%H:%M")
+    end_time: datetime = datetime.strptime(end, "%H:%M")
 
     if end_time < start_time:
         end_time = end_time.replace(
@@ -14,4 +14,4 @@ def calculate_time_difference(start_time, end_time):
     hour_difference = (
         end_time - start_time
     ).total_seconds() / 60  # Convert total seconds to hours
-    return hour_difference
+    return int(hour_difference)
