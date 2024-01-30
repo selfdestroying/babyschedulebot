@@ -51,12 +51,14 @@ async def child_name(message: Message, state: FSMContext):
     await message.answer(TEXT["ru"]["ask_child_age"])
 
 
-# TODO: Add age validation
-@router.message(UserData.child_age)
-async def child_age(message: Message, state: FSMContext):
-    await state.update_data(child_age=message.text)
-    await state.set_state(UserData.food_type)
-    await message.answer(TEXT["ru"]["ask_food_type"])
+@router.message(UserData.child_age, F.text.isdigit(), F.text.as_("age"))
+async def child_age(message: Message, state: FSMContext, age: str):
+    if int(age) < 0 or int(age) > 12:
+        await message.answer("Пожалуйста, введите корректный возраст (от 0 до 12)")
+    else:
+        await state.update_data(child_age=message.text)
+        await state.set_state(UserData.food_type)
+        await message.answer(TEXT["ru"]["ask_food_type"])
 
 
 @router.message(UserData.food_type)
@@ -66,16 +68,20 @@ async def foodtype(message: Message, state: FSMContext):
     await message.answer(TEXT["ru"]["ask_user_phone"])
 
 
-# TODO: Add phone number validation
-@router.message(UserData.user_phone)
+@router.message(
+    UserData.user_phone,
+    F.text.regexp(r"^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$"),
+)
 async def user_phone(message: Message, state: FSMContext):
     await state.update_data(user_phone=message.text)
     await state.set_state(UserData.user_email)
     await message.answer(TEXT["ru"]["ask_user_email"])
 
 
-# TODO: Add email validation
-@router.message(UserData.user_email)
+@router.message(
+    UserData.user_email,
+    F.text.regexp(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
+)
 async def user_email(message: Message, state: FSMContext):
     await state.update_data(user_email=message.text)
     data = await state.get_data()
@@ -95,3 +101,20 @@ async def user_email(message: Message, state: FSMContext):
     save_user_data(message.from_user.id, user)
     await message.answer(TEXT["ru"]["done"], reply_markup=get_main_menu_kb())
     await state.clear()
+
+
+@router.message(UserData.child_age)
+async def wrong_child_age(message: Message):
+    await message.answer("Пожалуйста, введите корректный возраст (от 0 до 12)")
+
+
+@router.message(UserData.user_phone)
+async def wrong_user_phone(message: Message):
+    await message.answer(
+        "Пожалуйста, введите корректный номер телефона (+7ХХХХХХХХХХ или 8ХХХХХХХХХХ)"
+    )
+
+
+@router.message(UserData.user_email)
+async def wrong_user_email(message: Message):
+    await message.answer("Пожалуйста, введите корректный адрес электронной почты")

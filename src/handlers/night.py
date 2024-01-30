@@ -33,28 +33,54 @@ async def end_night_sleep_time(message: Message, state: FSMContext):
     await state.set_state(Night.end_night_sleep_time)
 
 
-# TODO: Add time validation
+@router.message(
+    Night.start_night_sleep_time,
+    F.text,
+    F.text.regexp(r"^\d{2}:\d{2}$"),
+)
+async def start_night_sleep_time_answer(message: Message, state: FSMContext):
+    hours = message.text.split(":")[0]
+    minutes = message.text.split(":")[1]
+    if int(hours) < 0 or int(hours) > 23 or int(minutes) < 0 or int(minutes) > 59:
+        await message.answer(
+            "Неправильный формат времени. Введите время в формате ЧЧ:ММ"
+        )
+    else:
+        await state.update_data(start_night_sleep_time=message.text)
+        await message.answer("Отмечено начало ночного сна")
+
+
+@router.message(
+    Night.end_night_sleep_time,
+    F.text,
+    F.text.regexp(r"^\d{2}:\d{2}$"),
+)
+async def end_night_sleep_time_answer(message: Message, state: FSMContext):
+    hours = message.text.split(":")[0]
+    minutes = message.text.split(":")[1]
+    if int(hours) < 0 or int(hours) > 23 or int(minutes) < 0 or int(minutes) > 59:
+        await message.answer(
+            "Неправильный формат времени. Введите время в формате ЧЧ:ММ"
+        )
+    else:
+        await state.update_data(end_night_sleep_time=message.text)
+        await state.set_state(Night.night_rating)
+        await message.answer(
+            "Отмечено окончание ночного сна", reply_markup=ReplyKeyboardRemove()
+        )
+        await message.answer(TEXT["ru"]["rate"], reply_markup=get_rate_kb())
+
+
 @router.message(
     Night.start_night_sleep_time,
     F.text,
 )
-async def start_night_sleep_time_answer(message: Message, state: FSMContext):
-    await state.update_data(start_night_sleep_time=message.text)
-    await message.answer("Отмечено начало ночного сна")
-
-
-# TODO: Add time validation
 @router.message(
     Night.end_night_sleep_time,
     F.text,
 )
-async def end_night_sleep_time_answer(message: Message, state: FSMContext):
-    await state.update_data(end_night_sleep_time=message.text)
-    await state.set_state(Night.night_rating)
-    await message.answer(
-        "Отмечено окончание ночного сна", reply_markup=ReplyKeyboardRemove()
-    )
-    await message.answer(TEXT["ru"]["rate"], reply_markup=get_rate_kb())
+async def wrong_time_answer(message: Message, state: FSMContext):
+    await message.answer("Неправильный формат времени. Введите время в формате ЧЧ:ММ")
 
 
 @router.callback_query(

@@ -27,15 +27,20 @@ async def day_sleep_time(message: Message, state: FSMContext):
     await state.set_state(Day.fall_asleep_time)
 
 
-# TODO: Add time validation
-@router.message(Day.fall_asleep_time)
+@router.message(
+    Day.fall_asleep_time,
+    F.text.regexp(r"^\d{2}:\d{2}$"),
+)
 async def fall_asleep_time(message: Message, state: FSMContext):
     await state.update_data(fall_asleep_time=message.text)
     await message.answer("Когда вы проснулись днем? (Введите время в формате ЧЧ:ММ)")
     await state.set_state(Day.wake_up_time)
 
 
-@router.message(Day.wake_up_time)
+@router.message(
+    Day.wake_up_time,
+    F.text.regexp(r"^\d{2}:\d{2}$"),
+)
 async def wake_up_time(message: Message, state: FSMContext):
     fall_asleep_time = (await state.get_data())["fall_asleep_time"]
     wake_up_time = message.text
@@ -54,3 +59,9 @@ async def wake_up_time(message: Message, state: FSMContext):
             "Нет данных про ночной сон. Пожалуйста отметьте начало и конец ночного сна"
         )
     await state.clear()
+
+
+@router.message(Day.fall_asleep_time, F.text)
+@router.message(Day.wake_up_time, F.text)
+async def wrong_time_answer(message: Message):
+    await message.answer("Неправильный формат времени. Введите время в формате ЧЧ:ММ")

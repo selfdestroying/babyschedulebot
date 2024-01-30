@@ -68,7 +68,7 @@ async def test_data(call: CallbackQuery):
 
 # @DEV
 @router.callback_query(F.data == "no_test_data")
-async def no_test_data(call: CallbackQuery):
+async def no_test_data(call: CallbackQuery, state: FSMContext):
     await call.message.delete()
     await call.message.answer(TEXT["ru"]["ask_problem"])
-    await call.state.set_state(UserData.user_problem)
+    await state.set_state(UserData.user_problem)
