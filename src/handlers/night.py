@@ -1,4 +1,5 @@
 from aiogram import F, Router
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (
@@ -28,7 +29,7 @@ class Night(StatesGroup):
     Night.start_night_sleep_time, F.text.lower() == "отметить окончание ночного сна 🌅"
 )
 async def end_night_sleep_time(message: Message, state: FSMContext):
-    await message.answer("Когда вы проснулись? (Введите время в формате ЧЧ:ММ)")
+    await message.answer("Когда вы проснулись утром? (Введите время в формате ЧЧ:ММ)")
     await state.set_state(Night.end_night_sleep_time)
 
 
@@ -61,7 +62,8 @@ async def end_night_sleep_time_answer(message: Message, state: FSMContext):
     F.data.in_(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]),
 )
 async def night_rating(call: CallbackQuery, state: FSMContext):
-    await call.message.edit_text(
+    await call.message.delete()
+    await call.message.answer(
         "Спасибо за оценку! \nВаша оценка: " + str(call.data),
         reply_markup=get_main_menu_kb(),
     )
@@ -81,7 +83,7 @@ async def night_rating(call: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-@router.message(F.text.lower() == "отметить начало ночного сна 🌃")
+@router.message(StateFilter(None), F.text.lower() == "отметить начало ночного сна 🌃")
 async def start_night_sleep_time(message: Message, state: FSMContext):
     await state.set_state(Night.start_night_sleep_time)
     keyboard = ReplyKeyboardMarkup(
@@ -90,6 +92,6 @@ async def start_night_sleep_time(message: Message, state: FSMContext):
         resize_keyboard=True,
     )
     await message.answer(
-        "Когда вы уснули? (Введите время в формате ЧЧ:ММ)",
+        "Когда вы уснули ночью? (Введите время в формате ЧЧ:ММ)",
         reply_markup=keyboard,
     )

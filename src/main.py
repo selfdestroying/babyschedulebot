@@ -5,23 +5,34 @@ import sys
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
-from handlers import day, info, menu, night, registration
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from handlers import day, info, menu, night, registration, stats
 
 TOKEN = os.getenv("BOT_TOKEN")
-
-
-#     child_text = f"Имя ребенка: {html.quote(child_name)}\nПол ребенка: {child_gender}\nВозраст ребенка: {child_age}\nТип питания: {foodtype}"
-#     user_text = f"Имя родителя: {name}\nТелефон: {phone}\nEmail: {email}"
-#     await message.answer(text=user_text)
-#     await message.answer(text=child_text)
 
 
 async def main() -> None:
     bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
     dp = Dispatcher()
     dp.include_routers(
-        menu.router, info.router, registration.router, night.router, day.router
+        menu.router,
+        info.router,
+        stats.router,
+        registration.router,
+        night.router,
+        day.router,
     )
+
+    # Scheduled sending messages
+    # async def tick():
+    #     with open("newjsonfrombot.json", "r", encoding="UTF-8") as json_file:
+    #         user_data = json.load(json_file)
+    #         for id in user_data.keys():
+    #             await bot.send_message(chat_id=id, text="Tick")
+
+    # scheduler = AsyncIOScheduler()
+    # scheduler.add_job(tick, trigger="cron", minute="*/1")
+    # scheduler.start()
 
     await dp.start_polling(bot)
 
