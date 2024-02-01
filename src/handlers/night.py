@@ -14,7 +14,7 @@ from keyboards.menu import get_main_menu_kb
 from keyboards.rate import get_rate_kb
 from locales.ru import TEXT
 from models.DayInfo import DayInfo
-from utils.utils import calculate_time_difference
+from utils.differences import calculate_minutes_difference
 
 router = Router()
 
@@ -99,7 +99,7 @@ async def night_rating(call: CallbackQuery, state: FSMContext):
     day_info = DayInfo(
         start_night_sleep_time=start_night_sleep_time,
         end_night_sleep_time=end_night_sleep_time,
-        night_duration=calculate_time_difference(
+        night_duration=calculate_minutes_difference(
             start_night_sleep_time, end_night_sleep_time
         ),
         night_rating=call.data,

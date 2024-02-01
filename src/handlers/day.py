@@ -5,7 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message
 from db.schedule import add_sleep
 from models.Sleep import Sleep
-from utils.utils import calculate_time_difference
+from utils.differences import calculate_minutes_difference
 
 router = Router()
 
@@ -44,7 +44,7 @@ async def fall_asleep_time(message: Message, state: FSMContext):
 async def wake_up_time(message: Message, state: FSMContext):
     fall_asleep_time = (await state.get_data())["fall_asleep_time"]
     wake_up_time = message.text
-    total_minutes = calculate_time_difference(fall_asleep_time, wake_up_time)
+    total_minutes = calculate_minutes_difference(fall_asleep_time, wake_up_time)
 
     sleep_data = Sleep(
         start_sleep_time=fall_asleep_time,

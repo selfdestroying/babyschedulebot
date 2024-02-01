@@ -1,6 +1,6 @@
 from aiogram import F, Router
 from aiogram.types import Message
-from ideal_data import get_recomendation
+from utils.analysis import get_recomendation
 
 router = Router()
 

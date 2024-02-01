@@ -8,12 +8,12 @@ from aiogram.types import (
     Message,
 )
 from aiogram.utils.markdown import hbold
+from db.test_data import test_user
 from db.user import get_user_by_id, save_user_data
 from handlers.registration import UserData
 from keyboards.menu import get_main_menu_kb
 from locales.ru import TEXT
 from models.User import User
-from test_data import test_user
 
 router = Router()
 

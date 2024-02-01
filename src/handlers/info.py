@@ -16,7 +16,7 @@ async def info(message: Message):
     child_gender = user.child.gender
     food_type = user.child.food_type
 
-    html_info_text = "Информация о <b>родителе 🧑</b>\nИмя: {}\nТелефон: {}\nEmail: {}\nИнформация о <b>ребенке 👶</b>\nИмя: {}\nВозраст: {}\nПол: {}\nТип питания: {}".format(
+    html_info_text = "Информация о <b>родителе 🧑</b>\nИмя: {}\nТелефон: {}\nEmail: {}\nИнформация о <b>ребенке 👶</b>\nИмя: {}\nВозраст: {} месяцев\nПол: {}\nТип питания: {}".format(
         name, phone, email, child_name, child_age, child_gender, food_type
     )
 

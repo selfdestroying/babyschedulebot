@@ -5,7 +5,8 @@ import sys
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+# from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from handlers import day, info, menu, night, registration, stats
 
 TOKEN = os.getenv("BOT_TOKEN")
@@ -16,9 +17,9 @@ async def main() -> None:
     dp = Dispatcher()
     dp.include_routers(
         menu.router,
+        registration.router,
         info.router,
         stats.router,
-        registration.router,
         night.router,
         day.router,
     )
