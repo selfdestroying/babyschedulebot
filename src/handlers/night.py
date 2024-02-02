@@ -35,7 +35,6 @@ async def end_night_sleep_time(message: Message, state: FSMContext):
 
 @router.message(
     Night.start_night_sleep_time,
-    F.text,
     F.text.regexp(r"^\d{2}:\d{2}$"),
 )
 async def start_night_sleep_time_answer(message: Message, state: FSMContext):
@@ -52,7 +51,6 @@ async def start_night_sleep_time_answer(message: Message, state: FSMContext):
 
 @router.message(
     Night.end_night_sleep_time,
-    F.text,
     F.text.regexp(r"^\d{2}:\d{2}$"),
 )
 async def end_night_sleep_time_answer(message: Message, state: FSMContext):
@@ -92,6 +90,9 @@ async def night_rating(call: CallbackQuery, state: FSMContext):
     await call.message.answer(
         "Спасибо за оценку! \nВаша оценка: " + str(call.data),
         reply_markup=get_main_menu_kb(),
+    )
+    await call.message.answer(
+        f"Вы проснулись в {(await state.get_data())['end_night_sleep_time']} утра.\nУ нас сегодня будет 2 сна днем.\nПервое бодрствование постарайтесь сделать примерно 3-3.5 часа.\nЗначит укладываться в первый сон нужно в 12-12:30"
     )
     data = await state.get_data()
     start_night_sleep_time = data["start_night_sleep_time"]

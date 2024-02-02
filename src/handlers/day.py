@@ -2,8 +2,9 @@ from aiogram import F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import Message
+from aiogram.types import Message, ReplyKeyboardRemove
 from db.schedule import add_sleep
+from keyboards.menu import get_main_menu_kb
 from models.Sleep import Sleep
 from utils.differences import calculate_minutes_difference
 
@@ -23,7 +24,10 @@ async def day_sleep_time(message: Message, state: FSMContext):
         await state.update_data(activity_count=i)
     else:
         i = data["activity_count"]
-    await message.answer("Когда вы уснули днем? (Введите время в формате ЧЧ:ММ)")
+    await message.answer(
+        "Когда вы уснули днем? (Введите время в формате ЧЧ:ММ)",
+        reply_markup=ReplyKeyboardRemove(),
+    )
     await state.set_state(Day.fall_asleep_time)
 
 
@@ -53,10 +57,13 @@ async def wake_up_time(message: Message, state: FSMContext):
     ).model_dump()
     try:
         add_sleep(str(message.from_user.id), sleep_data)
-        await message.answer(f"Вы спали {total_minutes} минут")
+        await message.answer(
+            f"Вы спали {total_minutes} минут", reply_markup=get_main_menu_kb()
+        )
     except KeyError:
         await message.answer(
-            "Нет данных про ночной сон. Пожалуйста отметьте начало и конец ночного сна"
+            "Нет данных про ночной сон. Пожалуйста отметьте начало и конец ночного сна",
+            reply_markup=get_main_menu_kb(),
         )
     await state.clear()
 

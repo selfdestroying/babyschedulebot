@@ -20,6 +20,7 @@ router = Router()
 
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext) -> None:
+    state.clear()
     id = str(message.from_user.id)
     user = get_user_by_id(id)
     if user:
