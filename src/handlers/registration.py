@@ -60,7 +60,7 @@ async def child_name(message: Message, state: FSMContext):
     await message.answer(
         TEXT["ru"]["ask_child_age"],
         reply_markup=await DialogCalendar(
-            locale=await get_user_locale(message.from_user),
+            locale="ru_RU.UTF-8",
         ).start_calendar(),
     )
 
@@ -78,7 +78,7 @@ async def process_child_birth_date(
             await callback_query.message.edit_text(
                 "Нельзя выбрать будущую дату ❌. Выберите другую дату.",
                 reply_markup=await DialogCalendar(
-                    locale=await get_user_locale(callback_query.from_user),
+                    locale="ru_RU.UTF-8",
                 ).start_calendar(),
             )
         else:
@@ -127,7 +127,7 @@ async def user_email(message: Message, state: FSMContext):
         name=data["child_name"],
         gender=data["child_gender"],
         birth_date=data["child_birth_date"].strftime("%d.%m.%Y"),
-        age=age,
+        age=str(age),
         food_type=data["food_type"],
     )
     user = User(
@@ -147,7 +147,7 @@ async def wrong_child_birth_date(message: Message):
     await message.answer(
         "Выберите дату с помощью клавиатуры",
         reply_markup=await DialogCalendar(
-            locale=await get_user_locale(message.from_user),
+            locale="ru_RU.UTF-8",
         ).start_calendar(),
     )
 

@@ -18,5 +18,9 @@ def add_sleep(id: str, sleep: dict) -> None:
         user_data = json.load(json_file)
         current_date = datetime.datetime.now().strftime("%d.%m")
         user_data[id]["schedule"][current_date]["sleeps"].append(sleep)
+        user_data[id]["schedule"][current_date]["sleeps"].sort(
+            key=lambda x: x["start_sleep_time"]
+        )
+
     with open("newjsonfrombot.json", "w", encoding="UTF-8") as json_file:
         json.dump(user_data, json_file, ensure_ascii=False, indent=4)

@@ -170,7 +170,7 @@ def compare_day_sleep_amount(user_data, idealdata, date):
 
     n_min = idealdata[child_age]["day"]["sleep"]["amount"][0]
     n_max = idealdata[child_age]["day"]["sleep"]["amount"][1]
-    n = len(user_data["schedule"][date]["day_activities"])
+    n = len(user_data["schedule"][date]["sleeps"])
     if n >= n_min and n <= n_max:
         return f"Всего дневных снов: {n}. Это норма"
     elif n < n_min:

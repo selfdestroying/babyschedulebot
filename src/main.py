@@ -5,23 +5,25 @@ import sys
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
+from dotenv import load_dotenv
 
 # from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from handlers import day, info, menu, night, registration, stats
 
-TOKEN = os.getenv("BOT_TOKEN")
+load_dotenv()
+TOKEN = os.environ["BOT_TOKEN"]
 
 
 async def main() -> None:
     bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
     dp = Dispatcher()
     dp.include_routers(
-        menu.router,
         registration.router,
         info.router,
         stats.router,
         night.router,
         day.router,
+        menu.router,
     )
 
     # Scheduled sending messages

@@ -23,6 +23,7 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
     await state.clear()
     id = str(message.from_user.id)
     user = get_user_by_id(id)
+
     if user:
         await message.answer(
             "Вы в главном меню. Выберите нужную команду при помощи кнопки",
@@ -73,3 +74,12 @@ async def no_test_data(call: CallbackQuery, state: FSMContext):
     await call.message.delete()
     await call.message.answer(TEXT["ru"]["ask_problem"])
     await state.set_state(UserData.user_problem)
+
+
+@router.message()
+async def message(message: Message, state: FSMContext) -> None:
+    print(await state.get_data())
+    await message.answer(
+        "Вы в главном меню. Выберите нужную команду при помощи кнопки",
+        reply_markup=get_main_menu_kb(),
+    )
