@@ -7,3 +7,9 @@
 - [ ] Update locales
 - [ ] Admin panel
 - [ ] Refactor
+
+### Possible AI's
+
+- YandexGPT (Yandex AI)
+- GigaChat (Sberbank AI)
+- ~~ChatGPT (OpenAI)~~ (It's hard to get API key, need foreign number, need proxy server. Can try third-party proxy services like [this](https://proxyapi.ru/))
