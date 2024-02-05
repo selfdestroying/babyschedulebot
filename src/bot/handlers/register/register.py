@@ -74,7 +74,6 @@ async def process_child_birth_date(
     selected, date = await DialogCalendar(locale=conf.locale).process_selection(
         callback_query, callback_data
     )
-    print(date)
     if selected:
         if date > datetime.now():
             await callback_query.message.edit_text(

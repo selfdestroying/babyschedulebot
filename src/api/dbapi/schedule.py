@@ -1,3 +1,5 @@
+from postgrest.exceptions import APIError
+
 from src.api.dbapi.database import supabase
 
 
@@ -14,6 +16,7 @@ def create(
             supabase.table("schedules")
             .insert(
                 {
+                    "id": user_id,
                     "user_id": user_id,
                     "date": date,
                     "start_night_sleep_time": start_night_sleep_time,
@@ -24,9 +27,9 @@ def create(
             )
             .execute()
         )
-        return response.data[0]
-    except IndexError:
-        return []
+        return True
+    except (IndexError, APIError):
+        return False
 
 
 def read(user_id: int, date: str) -> dict | list:
@@ -43,10 +46,14 @@ def read(user_id: int, date: str) -> dict | list:
         return []
 
 
-def update(id, payload: dict):
+def update(id, date: str, payload: dict):
     try:
         response = (
-            supabase.table("schedules").update(payload).eq("user_id", id).execute()
+            supabase.table("schedules")
+            .update(payload)
+            .eq("user_id", id)
+            .eq("date", date)
+            .execute()
         )
         return response.data[0]
     except IndexError:

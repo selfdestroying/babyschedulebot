@@ -11,7 +11,6 @@ def register_user_and_child(data: dict[str, any]):
     child_name = data.get("child_name")
     child_gender = data.get("child_gender")
     child_birth_date = data.get("child_birth_date").strftime("%Y-%m-%d")
-    print(child_birth_date)
     food_type = data.get("food_type")
     child_age = calculate_child_age_in_months(child_birth_date)
 

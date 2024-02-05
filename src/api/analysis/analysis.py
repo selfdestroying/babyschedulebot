@@ -5,7 +5,7 @@ from src.utils.differences import calculate_minutes_difference
 
 
 # activities
-def get_activity(schedule: dict, end_day_time: str):
+def get_activity(schedule: dict, end_day_time: str = None):
     sleeps = schedule["sleeps"]
     activity_list = []
 
@@ -33,8 +33,12 @@ def get_activity(schedule: dict, end_day_time: str):
     activity_list.append(
         {
             "start_activity_time": wake_up,
-            "end_activity_time": end_day_time,
-            "activity_duration": calculate_minutes_difference(wake_up, end_day_time),
+            "end_activity_time": end_day_time
+            if end_day_time
+            else schedule["end_day_time"],
+            "activity_duration": calculate_minutes_difference(
+                wake_up, end_day_time if end_day_time else schedule["end_day_time"]
+            ),
         }
     )
     return activity_list
@@ -160,15 +164,16 @@ def compare_day_sleep_amount(sleeps: list, child_age: int, idealdata: dict):
         return f"Всего дневных снов: {n}. Это больше чем нужно"
 
 
-def get_recomendation(child_age: int, schedule: dict, end_day_time: str):
+def get_recomendation(child_age: int, schedule: dict):
     error_message = ""
     text_message = ""
     if not schedule:
         error_message += "\nНет данных о сегодняшнем дне"
     else:
         sleeps = schedule["sleeps"]
+        end_day_time = schedule["end_day_time"]
         night_duration = schedule["night_duration"]
-        if len(sleeps) == 0:
+        if len(sleeps) == 0 or not end_day_time:
             error_message += "\nНет данных о дневных снах"
 
     if error_message:
@@ -214,7 +219,6 @@ def get_recomendation(child_age: int, schedule: dict, end_day_time: str):
         "total_day_activity": total_day_activity,
         "total_day_sleep": total_day_sleep,
         "sleeps_all": sleeps_all,
-        "end_day_time": end_day_time,
     }
     text_message = f"<b>АНАЛИЗ ДНЕВНОГО СНА\n</b>\n{day_sleeps_result}\n{day_sleep_amoun_result}\n{total_day_sleep_result}\n{total_night_sleep_result}\n{sleep_all}\n{day_activities_result}\n{total_day_activity_result}"
 

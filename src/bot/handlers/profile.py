@@ -2,11 +2,14 @@ from aiogram import F, Router
 from aiogram.types import Message
 
 from src.api.dbapi import childapi, userapi
+from src.bot.handlers.night import Night
 
 router = Router()
 
 
 @router.message(F.text == "Профиль 👥")
+@router.message(Night.start_night_sleep_time, F.text == "Профиль 👥")
+@router.message(Night.end_night_sleep_time, F.text == "Профиль 👥")
 async def info(message: Message):
     id = message.from_user.id
     user = userapi.read(id)

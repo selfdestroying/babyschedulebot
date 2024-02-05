@@ -8,8 +8,8 @@ from src.bot.handlers.stats import router as stats_router
 routers = (
     start_router,
     register_router,
-    day_router,
-    night_router,
     stats_router,
     profile_router,
+    day_router,
+    night_router,
 )

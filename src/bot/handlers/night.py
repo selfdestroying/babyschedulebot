@@ -11,9 +11,8 @@ from aiogram.types import (
 
 from src.api.dbapi import scheduleapi
 from src.bot.filters.time import TimeFilter
-from src.bot.handlers.stats import show_stats
 from src.bot.keyboards.menu import MENU_KEYBOARD
-from src.bot.keyboards.night import END_SLEEP_KEYBOARD, get_rate_kb
+from src.bot.keyboards.night import BACK_KEYBOARD, END_SLEEP_KEYBOARD, get_rate_kb
 from src.locales.ru import TEXT
 from src.utils.differences import calculate_minutes_difference
 
@@ -36,10 +35,14 @@ async def end_night_sleep_time(message: Message, state: FSMContext):
 
 @router.message(Night.start_night_sleep_time, TimeFilter())
 async def start_night_sleep_time_answer(message: Message, state: FSMContext):
+    id = message.from_user.id
+    date = datetime.now().strftime("%Y-%m-%d")
     start_night_sleep_time = message.text + ":00"
+    scheduleapi.update(
+        id=id, date=date, payload={"end_day_time": start_night_sleep_time}
+    )
     await state.update_data(start_night_sleep_time=start_night_sleep_time)
     await message.answer("Отмечено начало ночного сна", reply_markup=END_SLEEP_KEYBOARD)
-    await show_stats(message, start_night_sleep_time)
 
 
 @router.message(Night.end_night_sleep_time, TimeFilter())
@@ -58,13 +61,13 @@ async def night_rating(call: CallbackQuery, state: FSMContext):
     id = call.from_user.id
     date = datetime.now().strftime("%Y-%m-%d")
     data = await state.get_data()
-    start_night_sleep_time = data["start_night_sleep_time"] + ":00"
+    start_night_sleep_time = data["start_night_sleep_time"]
     end_night_sleep_time = data["end_night_sleep_time"] + ":00"
     night_duration = calculate_minutes_difference(
         start_night_sleep_time, end_night_sleep_time
     )
     night_rating = int(call.data)
-    scheduleapi.create(
+    success = scheduleapi.create(
         user_id=id,
         date=date,
         start_night_sleep_time=start_night_sleep_time,
@@ -72,18 +75,38 @@ async def night_rating(call: CallbackQuery, state: FSMContext):
         night_duration=night_duration,
         night_rating=night_rating,
     )
-    await state.clear()
-    await call.message.delete()
-    await call.message.answer(
-        "Спасибо за оценку! \nВаша оценка: " + str(call.data),
-        reply_markup=MENU_KEYBOARD,
-    )
+    if success:
+        await state.clear()
+        await call.message.delete()
+        await call.message.answer(
+            "Спасибо за оценку! \nВаша оценка: " + str(call.data),
+            reply_markup=MENU_KEYBOARD,
+        )
+    else:
+        await state.clear()
+        await call.message.delete()
+        await call.message.answer(
+            "Вы уже отметили ночной сон за сегодняшний день!",
+            reply_markup=MENU_KEYBOARD,
+        )
 
 
 @router.message(StateFilter(None), F.text == "Отметить начало ночного сна 🌃")
 async def start_night_sleep_time(message: Message, state: FSMContext):
     await state.set_state(Night.start_night_sleep_time)
-    await message.answer("Когда вы уснули ночью? (Введите время в формате ЧЧ:ММ)")
+    await message.answer(
+        "Когда вы уснули ночью? (Введите время в формате ЧЧ:ММ)",
+        reply_markup=BACK_KEYBOARD,
+    )
+
+
+@router.message(Night.start_night_sleep_time, F.text == "Назад 🔙")
+async def back(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer(
+        "Вы в главном меню. Выберите нужную команду при помощи кнопки",
+        reply_markup=MENU_KEYBOARD,
+    )
 
 
 @router.message(Night.start_night_sleep_time)
