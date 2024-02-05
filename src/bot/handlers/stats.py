@@ -24,5 +24,6 @@ async def show_stats(message: Message, end_day_time: str):
     data, text = get_recomendation(
         child_age=child_age, schedule=schedule, end_day_time=end_day_time
     )
-    scheduleapi.update(id, data)
-    await message.answer(text)
+    if data:
+        scheduleapi.update(id, data)
+        await message.answer(text)

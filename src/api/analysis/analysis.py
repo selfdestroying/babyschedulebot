@@ -172,7 +172,7 @@ def get_recomendation(child_age: int, schedule: dict, end_day_time: str):
             error_message += "\nНет данных о дневных снах"
 
     if error_message:
-        return "Недостаточно данных для анализа:" + error_message
+        return {}, "Недостаточно данных для анализа:" + error_message
 
     day_activities = get_activity(schedule=schedule, end_day_time=end_day_time)
     total_day_activity = get_total_day_activity(day_activities=day_activities)

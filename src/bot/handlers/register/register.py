@@ -18,6 +18,7 @@ from src.bot.keyboards.register import (
     SEND_PHONE_KEYBOARD,
     get_calendar_keyboard,
 )
+from src.config import conf
 from src.locales.ru import TEXT
 
 
@@ -70,7 +71,7 @@ async def child_name(message: Message, state: FSMContext):
 async def process_child_birth_date(
     callback_query: CallbackQuery, callback_data: CallbackData, state: FSMContext
 ):
-    selected, date = await DialogCalendar(locale="ru_RU").process_selection(
+    selected, date = await DialogCalendar(locale=conf.locale).process_selection(
         callback_query, callback_data
     )
     print(date)

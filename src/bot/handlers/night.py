@@ -58,8 +58,8 @@ async def night_rating(call: CallbackQuery, state: FSMContext):
     id = call.from_user.id
     date = datetime.now().strftime("%Y-%m-%d")
     data = await state.get_data()
-    start_night_sleep_time = data["start_night_sleep_time"]
-    end_night_sleep_time = data["end_night_sleep_time"]
+    start_night_sleep_time = data["start_night_sleep_time"] + ":00"
+    end_night_sleep_time = data["end_night_sleep_time"] + ":00"
     night_duration = calculate_minutes_difference(
         start_night_sleep_time, end_night_sleep_time
     )
