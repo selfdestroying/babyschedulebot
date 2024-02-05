@@ -26,6 +26,7 @@ class BotConfig:
 class Configuration:
     """All in one configuration's class."""
 
+    locale = getenv("LOCALE")
     debug = bool(getenv("DEBUG"))
     logging_level = int(getenv("LOGGING_LEVEL", logging.INFO))
     supabase = DataBaseConfig()

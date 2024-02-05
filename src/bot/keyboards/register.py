@@ -6,6 +6,8 @@ from aiogram.types import (
 )
 from aiogram_calendar import DialogCalendar
 
+from src.config import conf
+
 REGISTER_START_CONFIRM = ReplyKeyboardMarkup(
     keyboard=[[KeyboardButton(text="Начать регистрацию")]], resize_keyboard=True
 )
@@ -26,4 +28,4 @@ SEND_PHONE_KEYBOARD = ReplyKeyboardMarkup(
 
 
 async def get_calendar_keyboard():
-    return await DialogCalendar(locale="ru_RU").start_calendar()
+    return await DialogCalendar(locale=conf.locale).start_calendar()
