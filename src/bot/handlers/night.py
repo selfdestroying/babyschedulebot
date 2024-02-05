@@ -11,6 +11,7 @@ from aiogram.types import (
 
 from src.api.dbapi import scheduleapi
 from src.bot.filters.time import TimeFilter
+from src.bot.handlers.stats import show_stats
 from src.bot.keyboards.menu import MENU_KEYBOARD
 from src.bot.keyboards.night import END_SLEEP_KEYBOARD, get_rate_kb
 from src.locales.ru import TEXT
@@ -35,8 +36,10 @@ async def end_night_sleep_time(message: Message, state: FSMContext):
 
 @router.message(Night.start_night_sleep_time, TimeFilter())
 async def start_night_sleep_time_answer(message: Message, state: FSMContext):
-    await state.update_data(start_night_sleep_time=message.text)
+    start_night_sleep_time = message.text + ":00"
+    await state.update_data(start_night_sleep_time=start_night_sleep_time)
     await message.answer("Отмечено начало ночного сна", reply_markup=END_SLEEP_KEYBOARD)
+    await show_stats(message, start_night_sleep_time)
 
 
 @router.message(Night.end_night_sleep_time, TimeFilter())
@@ -74,9 +77,6 @@ async def night_rating(call: CallbackQuery, state: FSMContext):
     await call.message.answer(
         "Спасибо за оценку! \nВаша оценка: " + str(call.data),
         reply_markup=MENU_KEYBOARD,
-    )
-    await call.message.answer(
-        f"Вы проснулись в {end_night_sleep_time} утра.\nУ нас сегодня будет 2 сна днем.\nПервое бодрствование постарайтесь сделать примерно 3-3.5 часа.\nЗначит укладываться в первый сон нужно в 12-12:30"
     )
 
 

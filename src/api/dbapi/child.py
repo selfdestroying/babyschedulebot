@@ -33,7 +33,7 @@ def read(user_id: int) -> list:
     try:
         response = supabase.table("childs").select("*").eq("user_id", user_id).execute()
 
-        return response.data
+        return response.data[0]
     except IndexError:
         return []
 

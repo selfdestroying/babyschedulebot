@@ -29,7 +29,7 @@ def create(
         return []
 
 
-def read(user_id, date: str) -> dict | list:
+def read(user_id: int, date: str) -> dict | list:
     try:
         response = (
             supabase.table("schedules")
@@ -43,8 +43,14 @@ def read(user_id, date: str) -> dict | list:
         return []
 
 
-def update(payload: dict):
-    pass
+def update(id, payload: dict):
+    try:
+        response = (
+            supabase.table("schedules").update(payload).eq("user_id", id).execute()
+        )
+        return response.data[0]
+    except IndexError:
+        return []
 
 
 def update_sleeps(user_id: int, date: str, sleep: dict):

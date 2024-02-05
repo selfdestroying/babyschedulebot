@@ -10,7 +10,7 @@ router = Router()
 async def info(message: Message):
     id = message.from_user.id
     user = userapi.read(id)
-    child = childapi.read(id)[0]
+    child = childapi.read(id)
     name = user["name"]
     phone = user["phone"]
     email = user["email"]

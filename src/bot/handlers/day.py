@@ -57,8 +57,8 @@ async def wake_up_time(message: Message, state: FSMContext):
     data = await state.get_data()
     id = data.get("id")
     date = data.get("date")
-    fall_asleep_time = data.get("fall_asleep_time")
-    wake_up_time = data.get("wake_up_time")
+    fall_asleep_time = data.get("fall_asleep_time") + ":00"
+    wake_up_time = data.get("wake_up_time") + ":00"
     total_minutes = calculate_minutes_difference(fall_asleep_time, wake_up_time)
     scheduleapi.update_sleeps(
         user_id=id,

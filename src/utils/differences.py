@@ -3,8 +3,8 @@ from datetime import datetime
 
 def calculate_minutes_difference(start: str, end: str) -> int:
     # Define the time format for parsing
-    start_time: datetime = datetime.strptime(start, "%H:%M")
-    end_time: datetime = datetime.strptime(end, "%H:%M")
+    start_time: datetime = datetime.strptime(start, "%H:%M:%S")
+    end_time: datetime = datetime.strptime(end, "%H:%M:%S")
 
     if end_time < start_time:
         end_time = end_time.replace(
