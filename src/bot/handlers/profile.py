@@ -1,20 +1,23 @@
 from aiogram import F, Router
 from aiogram.types import Message
-from db.user import get_user_by_id
+
+from src.api.dbapi import childapi, userapi
 
 router = Router()
 
 
-@router.message(F.text == "Информация ℹ️")
+@router.message(F.text == "Профиль 👥")
 async def info(message: Message):
-    user = get_user_by_id(str(message.from_user.id))
-    name = user.name
-    phone = user.phone
-    email = user.email
-    child_name = user.child.name
-    child_age = user.child.age
-    child_gender = user.child.gender
-    food_type = user.child.food_type
+    id = message.from_user.id
+    user = userapi.read(id)
+    child = childapi.read(id)[0]
+    name = user["name"]
+    phone = user["phone"]
+    email = user["email"]
+    child_name = child["name"]
+    child_age = child["age"]
+    child_gender = "Девочка" if child["gender"] == "female" else "Мальчик"
+    food_type = child["food_type"]
 
     html_info_text = "Информация о <b>родителе 🧑</b>\nИмя: {}\nТелефон: {}\nEmail: {}\nИнформация о <b>ребенке 👶</b>\nИмя: {}\nВозраст: {} месяцев\nПол: {}\nТип питания: {}".format(
         name, phone, email, child_name, child_age, child_gender, food_type

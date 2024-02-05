@@ -1,12 +1,12 @@
 # TODO:
 
-- [ ] Change data storage from json to database. [Supabase](https://supabase.com) or [Redis](https://redis.io) or [MongoDB](https://mongodb.com/) maybe good
+- [x] Change data storage from json to database. [Supabase](https://supabase.com) or [Redis](https://redis.io) or [MongoDB](https://mongodb.com/) maybe good
 - [ ] Try to change reply keyboard to inline keyboard
 - [ ] Add a scheduled message sending
-- [ ] Change the order of registration steps
+- [x] Change the order of registration steps
 - [ ] Update locales
 - [ ] Admin panel
-- [ ] Refactor
+- [x] Refactor
 
 ### Possible AI's
 

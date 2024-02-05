@@ -2,8 +2,8 @@
 import json
 from datetime import datetime
 
-from db.ideal_data import idealdata
-from utils.differences import calculate_minutes_difference
+from src.api.analysis.ideal_data import idealdata
+from src.utils.differences import calculate_minutes_difference
 
 
 def get_activity(user_data, date):

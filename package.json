@@ -4,7 +4,7 @@
 	"main": "secondfile.py",
 	"license": "MIT",
 	"scripts": {
-		"start": "nodemon ./src/main.py"
+		"start": "nodemon src.bot"
 	},
 	"dependencies": {
 		"nodemon": "^3.0.3"
@@ -12,6 +12,9 @@
 	"nodemonConfig": {
 		"ignore": [
 			"*.json"
-		]
+		],
+		"execMap": {
+			"py": "python -m"
+		}
 	}
 }
