@@ -86,8 +86,8 @@ async def process_child_birth_date(
         callback_query, callback_data
     )
     if selected:
-        if date.astimezone(pytz.timezone("Europe/Moscow")) > datetime.now(
-            pytz.timezone("Europe/Moscow")
+        if date.astimezone(pytz.timezone("Etc/GMT-3")) > datetime.now(
+            pytz.timezone("Etc/GMT-3")
         ):
             await callback_query.message.edit_text(
                 "Нельзя выбрать будущую дату ❌. Выберите другую дату.",
@@ -139,11 +139,11 @@ async def end_night_time(message: Message, state: FSMContext):
     data = await state.get_data()
     end_night_time = data.get("end_night_time")
     start_prev_night = data.get("start_night_time")
-    current_date = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d")
+    current_date = datetime.now(pytz.timezone("Etc/GMT-3")).strftime("%Y-%m-%d")
     end_night_time = datetime.strptime(
         f"{current_date} {end_night_time}", "%Y-%m-%d %H:%M"
-    ).astimezone(pytz.timezone("Europe/Moscow"))
-    current_time = datetime.now(pytz.timezone("Europe/Moscow"))
+    ).replace(tzinfo=pytz.timezone("Etc/GMT-3"))
+    current_time = datetime.now(pytz.timezone("Etc/GMT-3"))
     child_age = childapi.read(user_id=message.from_user.id)["age"]
 
     ideal_time = ideal_data.ideal_data[child_age]["day"]["activity"]["average_duration"]
@@ -163,19 +163,20 @@ async def end_night_time(message: Message, state: FSMContext):
             ]
         ]
     )
-    scheduleapi.create(
-        user_id=message.from_user.id,
-        date=current_date,
-        start_day=end_night_time.strftime("%H:%M:%S"),
-        start_prev_night=start_prev_night + ":00",
-        night_duration=calculate_minutes_difference(
-            start_prev_night + ":00", end_night_time.strftime("%H:%M:%S")
-        ),
-        night_rating=10,
-    )
+
     if current_time < end_night_time:
         await message.answer("Вы указали будущее время, так нельзя))))")
     else:
+        scheduleapi.create(
+            user_id=message.from_user.id,
+            date=current_date,
+            start_day=end_night_time.strftime("%H:%M:%S"),
+            start_prev_night=start_prev_night + ":00",
+            night_duration=calculate_minutes_difference(
+                start_prev_night + ":00", end_night_time.strftime("%H:%M:%S")
+            ),
+            night_rating=10,
+        )
         await state.clear()
         await message.answer(
             "Информация по прошлой ночи записана. Теперь можем начинать вести статистику по сегоднящнему дню.\n\n<i>Так же вы в любой момент можете посмотреть статистику за сегоднящний день с помощью команды /stats или вызвать клавиатуру с помощью команды /menu</i>"

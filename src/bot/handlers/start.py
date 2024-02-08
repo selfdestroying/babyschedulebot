@@ -115,7 +115,7 @@ async def note_sleep_callback(callback_query: CallbackQuery, state: FSMContext):
 @router.message(Command("stats"))
 async def text(message: Message, state: FSMContext):
     id = message.from_user.id
-    current_date = datetime.now(pytz.timezone("Europe/Moscow"))
+    current_date = datetime.now(pytz.timezone("Etc/GMT-3"))
     current_date_str = current_date.strftime("%Y-%m-%d")
     schedule = scheduleapi.read(user_id=id, date=current_date_str)
     child = childapi.read(user_id=message.from_user.id)
@@ -222,18 +222,8 @@ async def end_day(message: Message, state: FSMContext):
     data = await state.get_data()
     start_sleep = data.get("start_day")
     end_sleep = data.get("end_day")
-    current_date = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d")
-    scheduleapi.update_sleeps(
-        user_id=message.from_user.id,
-        date=current_date,
-        sleep={
-            "start_sleep_time": start_sleep + ":00",
-            "end_sleep_time": end_sleep + ":00",
-            "sleep_duration": calculate_minutes_difference(
-                start_sleep + ":00", end_sleep + ":00"
-            ),
-        },
-    )
+    current_date = datetime.now(pytz.timezone("Etc/GMT-3")).strftime("%Y-%m-%d")
+
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -246,10 +236,10 @@ async def end_day(message: Message, state: FSMContext):
 
     start_sleep = datetime.strptime(
         current_date + " " + start_sleep, "%Y-%m-%d %H:%M"
-    ).astimezone(pytz.timezone("Europe/Moscow"))
+    ).replace(tzinfo=pytz.timezone("Etc/GMT-3"))
     end_sleep = datetime.strptime(
         current_date + " " + end_sleep, "%Y-%m-%d %H:%M"
-    ).astimezone(pytz.timezone("Europe/Moscow"))
+    ).replace(tzinfo=pytz.timezone("Etc/GMT-3"))
     child_age = childapi.read(user_id=message.from_user.id)["age"]
     sleep = [
         {
@@ -263,7 +253,7 @@ async def end_day(message: Message, state: FSMContext):
     recommendation = compare_day_sleep(
         sleep, child_age=child_age, idealdata=ideal_data.ideal_data
     )
-    current_time = datetime.now(pytz.timezone("Europe/Moscow"))
+    current_time = datetime.now(pytz.timezone("Etc/GMT-3"))
     ideal_time = ideal_data.ideal_data[child_age]["day"]["activity"]["average_duration"]
 
     ideal_time_left = ideal_time[0]
@@ -287,6 +277,17 @@ async def end_day(message: Message, state: FSMContext):
     if current_time < end_sleep:
         await message.answer("Вы указали будущее время, так нельзя))))")
     else:
+        scheduleapi.update_sleeps(
+            user_id=message.from_user.id,
+            date=current_date,
+            sleep={
+                "start_sleep_time": start_sleep + ":00",
+                "end_sleep_time": end_sleep + ":00",
+                "sleep_duration": calculate_minutes_difference(
+                    start_sleep + ":00", end_sleep + ":00"
+                ),
+            },
+        )
         await state.clear()
         if current_time > next_sleep_start_right:
             await message.answer(

@@ -45,7 +45,7 @@ async def end_night_sleep_time(message: Message, state: FSMContext):
 @router.message(Night.start_night_sleep_time, TimeFilter())
 async def start_night_sleep_time_answer(message: Message, state: FSMContext):
     id = message.from_user.id
-    current_date = datetime.now(pytz.timezone("Europe/Moscow"))
+    current_date = datetime.now(pytz.timezone("Etc/GMT-3"))
     date_str = current_date.strftime("%Y-%m-%d")
     start_night_sleep_time = message.text + ":00"
     next_day = (current_date + timedelta(days=1)).strftime("%Y-%m-%d")
@@ -96,7 +96,7 @@ async def end_night_sleep_time_answer(message: Message, state: FSMContext):
 )
 async def night_rating(call: CallbackQuery, state: FSMContext):
     id = call.from_user.id
-    date = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d")
+    date = datetime.now(pytz.timezone("Etc/GMT-3")).strftime("%Y-%m-%d")
     data = await state.get_data()
     start_night_sleep_time = data["start_night_sleep_time"]
     end_night_sleep_time = data["end_night_sleep_time"] + ":00"
