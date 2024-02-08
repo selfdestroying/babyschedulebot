@@ -112,7 +112,7 @@ async def note_sleep_callback(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
 
 
-@router.message(StateFilter(None), Command("stats"))
+@router.message(Command("stats"))
 async def text(message: Message, state: FSMContext):
     id = message.from_user.id
     current_date = datetime.now(pytz.timezone("Europe/Moscow"))
@@ -244,9 +244,13 @@ async def end_day(message: Message, state: FSMContext):
         ]
     )
 
-    start_sleep = datetime.strptime(current_date + " " + start_sleep, "%Y-%m-%d %H:%M")
+    start_sleep = datetime.strptime(
+        current_date + " " + start_sleep, "%Y-%m-%d %H:%M"
+    ).replace(tzinfo=pytz.timezone("Europe/Moscow"))
 
-    end_sleep = datetime.strptime(current_date + " " + end_sleep, "%Y-%m-%d %H:%M")
+    end_sleep = datetime.strptime(
+        current_date + " " + end_sleep, "%Y-%m-%d %H:%M"
+    ).replace(tzinfo=pytz.timezone("Europe/Moscow"))
 
     child_age = childapi.read(user_id=message.from_user.id)["age"]
     sleep = [

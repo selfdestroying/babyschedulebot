@@ -86,7 +86,9 @@ async def process_child_birth_date(
         callback_query, callback_data
     )
     if selected:
-        if date > datetime.now(pytz.timezone("Europe/Moscow")):
+        if date.astimezone(pytz.timezone("Europe/Moscow")) > datetime.now(
+            pytz.timezone("Europe/Moscow")
+        ):
             await callback_query.message.edit_text(
                 "Нельзя выбрать будущую дату ❌. Выберите другую дату.",
                 reply_markup=await get_calendar_keyboard(),
@@ -140,6 +142,8 @@ async def end_night_time(message: Message, state: FSMContext):
     current_date = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d")
     end_night_time = datetime.strptime(
         f"{current_date} {end_night_time}", "%Y-%m-%d %H:%M"
+    ).replace(
+        tzinfo=pytz.timezone("Europe/Moscow"),
     )
     current_time = datetime.now(pytz.timezone("Europe/Moscow"))
     child_age = childapi.read(user_id=message.from_user.id)["age"]
