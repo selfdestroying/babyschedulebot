@@ -15,7 +15,9 @@ test_child = {
     "food_type": "breast",
 }
 test_chedule = {
-    datetime.datetime.now(pytz.timezone("Europe/Moscow")).strftime("%d.%m"): {
+    datetime.datetime.now()
+    .replace(tzinfo=pytz.timezone("Europe/Moscow"))
+    .strftime("%d.%m"): {
         "start_night_sleep_time": "22:00",
         "end_night_sleep_time": "09:00",
         "night_duration": 660,

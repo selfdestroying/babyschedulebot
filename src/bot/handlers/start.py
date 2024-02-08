@@ -115,7 +115,7 @@ async def note_sleep_callback(callback_query: CallbackQuery, state: FSMContext):
 @router.message(Command("stats"))
 async def text(message: Message, state: FSMContext):
     id = message.from_user.id
-    current_date = datetime.now(pytz.timezone("Europe/Moscow"))
+    current_date = datetime.now().replace(tzinfo=pytz.timezone("Europe/Moscow"))
     current_date_str = current_date.strftime("%Y-%m-%d")
     schedule = scheduleapi.read(user_id=id, date=current_date_str)
     child = childapi.read(user_id=message.from_user.id)
@@ -222,7 +222,11 @@ async def end_day(message: Message, state: FSMContext):
     data = await state.get_data()
     start_sleep = data.get("start_day")
     end_sleep = data.get("end_day")
-    current_date = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d")
+    current_date = (
+        datetime.now()
+        .replace(tzinfo=pytz.timezone("Europe/Moscow"))
+        .strftime("%Y-%m-%d")
+    )
     scheduleapi.update_sleeps(
         user_id=message.from_user.id,
         date=current_date,
@@ -265,7 +269,7 @@ async def end_day(message: Message, state: FSMContext):
     recommendation = compare_day_sleep(
         sleep, child_age=child_age, idealdata=ideal_data.ideal_data
     )
-    current_time = datetime.now(pytz.timezone("Europe/Moscow"))
+    current_time = datetime.now().replace(tzinfo=pytz.timezone("Europe/Moscow"))
     ideal_time = ideal_data.ideal_data[child_age]["day"]["activity"]["average_duration"]
 
     ideal_time_left = ideal_time[0]
@@ -274,9 +278,10 @@ async def end_day(message: Message, state: FSMContext):
     next_sleep_start_left = end_sleep + timedelta(minutes=ideal_time_left)
     next_sleep_start_right = end_sleep + timedelta(minutes=ideal_time_right)
     next_sleep_delta = next_sleep_start_right - current_time
-    print(next_sleep_delta.seconds)
-    print(ideal_time_right)
-    print(current_time.minute)
+    print("next - ", next_sleep_start_right)
+    print(next_sleep_delta)
+    print(end_sleep)
+    print(current_time)
     note_sleep_button = InlineKeyboardMarkup(
         inline_keyboard=[
             [
