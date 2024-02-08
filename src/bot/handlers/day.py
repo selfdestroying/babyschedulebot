@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import pytz
 from aiogram import F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
@@ -22,7 +23,7 @@ class Day(StatesGroup):
 @router.callback_query(F.data == "day_sleep")
 async def day_sleep_time(message: Message, state: FSMContext):
     id = message.from_user.id
-    current_date = datetime.now().strftime("%Y-%m-%d")
+    current_date = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d")
     schedule = scheduleapi.read(user_id=id, date=current_date)
     if schedule:
         await state.update_data(id=id)

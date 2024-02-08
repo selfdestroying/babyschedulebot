@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime, timedelta
 
+import pytz
 from aiogram import F, Router
 from aiogram.filters import Command, CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
@@ -114,7 +115,7 @@ async def note_sleep_callback(callback_query: CallbackQuery, state: FSMContext):
 @router.message(StateFilter(None), Command("stats"))
 async def text(message: Message, state: FSMContext):
     id = message.from_user.id
-    current_date = datetime.now()
+    current_date = datetime.now(pytz.timezone("Europe/Moscow"))
     current_date_str = current_date.strftime("%Y-%m-%d")
     schedule = scheduleapi.read(user_id=id, date=current_date_str)
     child = childapi.read(user_id=message.from_user.id)
@@ -221,7 +222,7 @@ async def end_day(message: Message, state: FSMContext):
     data = await state.get_data()
     start_sleep = data.get("start_day")
     end_sleep = data.get("end_day")
-    current_date = datetime.now().strftime("%Y-%m-%d")
+    current_date = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d")
     scheduleapi.update_sleeps(
         user_id=message.from_user.id,
         date=current_date,
@@ -260,7 +261,7 @@ async def end_day(message: Message, state: FSMContext):
     recommendation = compare_day_sleep(
         sleep, child_age=child_age, idealdata=ideal_data.ideal_data
     )
-    current_time = datetime.now()
+    current_time = datetime.now(pytz.timezone("Europe/Moscow"))
     ideal_time = ideal_data.ideal_data[child_age]["day"]["activity"]["average_duration"]
 
     ideal_time_left = ideal_time[0]

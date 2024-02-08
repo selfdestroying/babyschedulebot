@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime, timedelta
 
+import pytz
 from aiogram import F
 from aiogram.filters.callback_data import CallbackData
 from aiogram.fsm.context import FSMContext
@@ -85,7 +86,7 @@ async def process_child_birth_date(
         callback_query, callback_data
     )
     if selected:
-        if date > datetime.now():
+        if date > datetime.now(pytz.timezone("Europe/Moscow")):
             await callback_query.message.edit_text(
                 "Нельзя выбрать будущую дату ❌. Выберите другую дату.",
                 reply_markup=await get_calendar_keyboard(),
@@ -136,11 +137,11 @@ async def end_night_time(message: Message, state: FSMContext):
     data = await state.get_data()
     end_night_time = data.get("end_night_time")
     start_prev_night = data.get("start_night_time")
-    current_date = datetime.now().strftime("%Y-%m-%d")
+    current_date = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d")
     end_night_time = datetime.strptime(
         f"{current_date} {end_night_time}", "%Y-%m-%d %H:%M"
     )
-    current_time = datetime.now()
+    current_time = datetime.now(pytz.timezone("Europe/Moscow"))
     child_age = childapi.read(user_id=message.from_user.id)["age"]
 
     ideal_time = ideal_data.ideal_data[child_age]["day"]["activity"]["average_duration"]

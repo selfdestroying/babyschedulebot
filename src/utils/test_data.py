@@ -1,5 +1,7 @@
 import datetime
 
+import pytz
+
 test_user = {
     "name": "John",
     "phone": "+7 999 999 99 99",
@@ -13,7 +15,7 @@ test_child = {
     "food_type": "breast",
 }
 test_chedule = {
-    datetime.datetime.now().strftime("%d.%m"): {
+    datetime.datetime.now(pytz.timezone("Europe/Moscow")).strftime("%d.%m"): {
         "start_night_sleep_time": "22:00",
         "end_night_sleep_time": "09:00",
         "night_duration": 660,
