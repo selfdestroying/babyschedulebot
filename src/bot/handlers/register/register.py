@@ -1,14 +1,21 @@
-from datetime import datetime
+import asyncio
+from datetime import datetime, timedelta
 
 from aiogram import F
 from aiogram.filters.callback_data import CallbackData
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
     CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
     Message,
+    ReplyKeyboardRemove,
 )
 from aiogram_calendar import DialogCalendar, DialogCalendarCallback
 
+from src.api.analysis import ideal_data
+from src.api.dbapi import childapi, scheduleapi
+from src.bot.filters.time import TimeFilter
 from src.bot.handlers.register import router
 from src.bot.handlers.register.fsm import RegisterGroup
 from src.bot.handlers.register.helpers import register_user_and_child
@@ -20,6 +27,7 @@ from src.bot.keyboards.register import (
 )
 from src.config import conf
 from src.locales.ru import TEXT
+from src.utils.differences import calculate_minutes_difference
 
 
 @router.message(F.text == "Начать регистрацию", RegisterGroup.confirmation)
@@ -37,7 +45,9 @@ async def register_confirmation(message: Message, state: FSMContext):
 async def user_phone(message: Message, state: FSMContext):
     await state.update_data(user_phone=message.contact.phone_number)
     await state.set_state(RegisterGroup.user_email)
-    await message.answer(TEXT["ru"]["ask_user_email"])
+    await message.answer(
+        TEXT["ru"]["ask_user_email"], reply_markup=ReplyKeyboardRemove()
+    )
 
 
 @router.message(
@@ -104,8 +114,81 @@ async def food_type(message: Message, state: FSMContext):
     await state.update_data(food_type=message.text)
     data = await state.get_data()
     register_user_and_child(data)
-    await state.clear()
-    await message.answer("Регистрация прошла успешно!", reply_markup=MENU_KEYBOARD)
+    await state.set_state(RegisterGroup.start_night_time)
+    await message.answer(
+        "Регистрация прошла успешно!\nТеперь для точности статистики мне нужно узнать информацию по прошедшей ночи."
+    )
+    await message.answer("Во сколько вы уснули вчера ночью?")
+
+
+@router.message(RegisterGroup.start_night_time, TimeFilter())
+async def start_night_time(message: Message, state: FSMContext):
+    await state.update_data(start_night_time=message.text)
+    await state.set_state(RegisterGroup.end_night_time)
+    await message.answer(
+        "Во сколько вы проснулись сегодня утром?\n\n<i>Если сейчас утро и ребёнок еще не проснулся, то дождитесь когда он проснётся и напишите время</i>"
+    )
+
+
+@router.message(RegisterGroup.end_night_time, TimeFilter())
+async def end_night_time(message: Message, state: FSMContext):
+    await state.update_data(end_night_time=message.text)
+    data = await state.get_data()
+    end_night_time = data.get("end_night_time")
+    start_prev_night = data.get("start_night_time")
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    end_night_time = datetime.strptime(
+        f"{current_date} {end_night_time}", "%Y-%m-%d %H:%M"
+    )
+    current_time = datetime.now()
+    child_age = childapi.read(user_id=message.from_user.id)["age"]
+
+    ideal_time = ideal_data.ideal_data[child_age]["day"]["activity"]["average_duration"]
+
+    ideal_time_left = ideal_time[0]
+    ideal_time_right = ideal_time[1]
+
+    next_sleep_start_left = end_night_time + timedelta(minutes=ideal_time_left)
+    next_sleep_start_right = end_night_time + timedelta(minutes=ideal_time_right)
+    next_sleep_delta = next_sleep_start_right - current_time
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Записать еще один сон", callback_data="day_sleep"
+                )
+            ]
+        ]
+    )
+    scheduleapi.create(
+        user_id=message.from_user.id,
+        date=current_date,
+        start_day=end_night_time.strftime("%H:%M:%S"),
+        start_prev_night=start_prev_night + ":00",
+        night_duration=calculate_minutes_difference(
+            start_prev_night + ":00", end_night_time.strftime("%H:%M:%S")
+        ),
+        night_rating=10,
+    )
+    if current_time < end_night_time:
+        await message.answer("Вы указали будущее время, так нельзя))))")
+    else:
+        await state.clear()
+        await message.answer(
+            "Информация по прошлой ночи записана. Теперь можем начинать вести статистику по сегоднящнему дню.\n\n<i>Так же вы в любой момент можете посмотреть статистику за сегоднящний день с помощью команды /stats или вызвать клавиатуру с помощью команды /menu</i>"
+        )
+        if current_time > next_sleep_start_right:
+            await message.answer(
+                f"Вы проснулись в {end_night_time.strftime('%H:%M')} утра. Для точности статистики, отметьте, пожалуйста <b>прошедшие</b> дневные сны",
+                reply_markup=keyboard,
+            )
+        else:
+            await message.answer(
+                f"Вы проснулись в {end_night_time.strftime('%H:%M')} утра. Следующий ваш сон должен начаться примерно в {next_sleep_start_left.strftime('%H:%M')} - {next_sleep_start_right.strftime('%H:%M')}\n<i>Я пришлю вам напоминание, когда придет время засыпать</i>",
+                reply_markup=ReplyKeyboardRemove(),
+            )
+            await asyncio.sleep(next_sleep_delta.seconds)
+            await message.answer("Уснули?", reply_markup=MENU_KEYBOARD)
 
 
 # -------------------------------------------------------------

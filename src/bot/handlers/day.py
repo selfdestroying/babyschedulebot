@@ -19,6 +19,7 @@ class Day(StatesGroup):
 
 
 @router.message(StateFilter(None), F.text == "Отметить время дневного сна ☀️")
+@router.callback_query(F.data == "day_sleep")
 async def day_sleep_time(message: Message, state: FSMContext):
     id = message.from_user.id
     current_date = datetime.now().strftime("%Y-%m-%d")

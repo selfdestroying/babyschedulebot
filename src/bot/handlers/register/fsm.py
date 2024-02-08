@@ -10,3 +10,5 @@ class RegisterGroup(StatesGroup):
     child_gender = State()
     child_birth_date = State()
     food_type = State()
+    start_night_time = State()
+    end_night_time = State()

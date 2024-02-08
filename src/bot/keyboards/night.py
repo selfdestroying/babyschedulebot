@@ -9,7 +9,6 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 END_SLEEP_KEYBOARD = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="Отметить окончание ночного сна 🌅")],
-        [KeyboardButton(text="Статистика 📊"), KeyboardButton(text="Профиль 👥")],
     ],
     one_time_keyboard=True,
     resize_keyboard=True,

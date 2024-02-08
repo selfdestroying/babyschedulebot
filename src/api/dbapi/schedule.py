@@ -6,11 +6,11 @@ from src.api.dbapi.database import supabase
 def create(
     user_id,
     date: str,
-    start_night_sleep_time: str,
-    end_night_sleep_time: str,
+    start_day: str,
+    start_prev_night: str,
     night_duration: int,
     night_rating: int,
-) -> dict | list:
+) -> bool:
     try:
         response = (
             supabase.table("schedules")
@@ -19,8 +19,8 @@ def create(
                     "id": user_id,
                     "user_id": user_id,
                     "date": date,
-                    "start_night_sleep_time": start_night_sleep_time,
-                    "end_night_sleep_time": end_night_sleep_time,
+                    "start_day": start_day,
+                    "start_prev_night": start_prev_night,
                     "night_duration": night_duration,
                     "night_rating": night_rating,
                 }
@@ -28,7 +28,8 @@ def create(
             .execute()
         )
         return True
-    except (IndexError, APIError):
+    except (IndexError, APIError) as error:
+        print(error)
         return False
 
 
@@ -43,7 +44,7 @@ def read(user_id: int, date: str) -> dict | list:
         )
         return response.data[0]
     except IndexError:
-        return []
+        return {}
 
 
 def update(id, date: str, payload: dict):

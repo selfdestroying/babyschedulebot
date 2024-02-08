@@ -9,7 +9,7 @@ def get_activity(schedule: dict, end_day_time: str = None):
     sleeps = schedule["sleeps"]
     activity_list = []
 
-    wake_up = schedule["end_night_sleep_time"]
+    wake_up = schedule["start_day"]
     fall_asleep = sleeps[0]["start_sleep_time"]
     activity_list.append(
         {
@@ -33,11 +33,9 @@ def get_activity(schedule: dict, end_day_time: str = None):
     activity_list.append(
         {
             "start_activity_time": wake_up,
-            "end_activity_time": end_day_time
-            if end_day_time
-            else schedule["end_day_time"],
+            "end_activity_time": end_day_time if end_day_time else schedule["end_day"],
             "activity_duration": calculate_minutes_difference(
-                wake_up, end_day_time if end_day_time else schedule["end_day_time"]
+                wake_up, end_day_time if end_day_time else schedule["end_day"]
             ),
         }
     )
@@ -78,6 +76,20 @@ def compare_day_sleeps(sleeps: list, child_age: int, idealdata: dict):
             result += f"Ваш {i+1} сон длился {n} минут. Это короче чем нужно\n"
         elif n > n_max:
             result += f"Ваш {i+1} сон длился {n} минут. Это дольше чем нужно\n"
+    return result
+
+
+def compare_day_sleep(sleeps: list, child_age: int, idealdata: dict):
+    n_min = idealdata[child_age]["day"]["sleep"]["average_duration"][0]
+    n_max = idealdata[child_age]["day"]["sleep"]["average_duration"][1]
+    result = ""
+    n = sleeps[0]["sleep_duration"]
+    if n >= n_min and n <= n_max:
+        result += f"Ваш сон длился {n} минут. Это норма\n"
+    elif n < n_min:
+        result += f"Ваш сон длился {n} минут. Это короче чем нужно\n"
+    elif n > n_max:
+        result += f"Ваш сон длился {n} минут. Это дольше чем нужно\n"
     return result
 
 
@@ -165,19 +177,10 @@ def compare_day_sleep_amount(sleeps: list, child_age: int, idealdata: dict):
 
 
 def get_recomendation(child_age: int, schedule: dict):
-    error_message = ""
     text_message = ""
-    if not schedule:
-        error_message += "\nНет данных о сегодняшнем дне"
-    else:
-        sleeps = schedule["sleeps"]
-        end_day_time = schedule["end_day_time"]
-        night_duration = schedule["night_duration"]
-        if len(sleeps) == 0 or not end_day_time:
-            error_message += "\nНет данных о дневных снах"
-
-    if error_message:
-        return {}, "Недостаточно данных для анализа:" + error_message
+    end_day_time = schedule["end_day"]
+    sleeps = schedule["sleeps"]
+    night_duration = schedule["night_duration"]
 
     day_activities = get_activity(schedule=schedule, end_day_time=end_day_time)
     total_day_activity = get_total_day_activity(day_activities=day_activities)

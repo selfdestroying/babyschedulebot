@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from aiogram import F, Router
 from aiogram.filters import StateFilter
@@ -11,6 +11,7 @@ from aiogram.types import (
 
 from src.api.dbapi import scheduleapi
 from src.bot.filters.time import TimeFilter
+from src.bot.handlers.stats import show_stats
 from src.bot.keyboards.menu import MENU_KEYBOARD
 from src.bot.keyboards.night import BACK_KEYBOARD, END_SLEEP_KEYBOARD, get_rate_kb
 from src.locales.ru import TEXT
@@ -23,25 +24,60 @@ class Night(StatesGroup):
     start_night_sleep_time = State()
     end_night_sleep_time = State()
     night_rating = State()
+    middle = State()
 
 
-@router.message(
-    Night.start_night_sleep_time, F.text == "Отметить окончание ночного сна 🌅"
-)
+@router.message(Night.middle, F.text)
 async def end_night_sleep_time(message: Message, state: FSMContext):
-    await state.set_state(Night.end_night_sleep_time)
-    await message.answer("Когда вы проснулись утром? (Введите время в формате ЧЧ:ММ)")
+    if message.text == "Отметить окончание ночного сна 🌅":
+        await state.set_state(Night.end_night_sleep_time)
+        await message.answer(
+            "Когда вы проснулись утром? (Введите время в формате ЧЧ:ММ)"
+        )
+    else:
+        await message.answer(
+            "Нажмите на кноку чтобы отметить окончание ночного сна",
+            reply_markup=END_SLEEP_KEYBOARD,
+        )
 
 
 @router.message(Night.start_night_sleep_time, TimeFilter())
 async def start_night_sleep_time_answer(message: Message, state: FSMContext):
     id = message.from_user.id
-    date = datetime.now().strftime("%Y-%m-%d")
+    current_date = datetime.now()
+    date_str = current_date.strftime("%Y-%m-%d")
     start_night_sleep_time = message.text + ":00"
-    scheduleapi.update(
-        id=id, date=date, payload={"end_day_time": start_night_sleep_time}
-    )
+    next_day = (current_date + timedelta(days=1)).strftime("%Y-%m-%d")
+    prev_day = (current_date - timedelta(days=1)).strftime("%Y-%m-%d")
+    schedule = scheduleapi.read(user_id=id, date=date_str)
+    if schedule:
+        scheduleapi.update(
+            id=id, date=date_str, payload={"end_day": start_night_sleep_time}
+        )
+        scheduleapi.create(
+            user_id=id,
+            date=next_day,
+            start_day=None,
+            start_prev_night=start_night_sleep_time,
+            night_duration=None,
+            night_rating=None,
+        )
+        await show_stats(message, date_str)
+    else:
+        scheduleapi.update(
+            id=id, date=prev_day, payload={"end_day": start_night_sleep_time}
+        )
+        scheduleapi.create(
+            user_id=id,
+            date=date_str,
+            start_day=None,
+            start_prev_night=start_night_sleep_time,
+            night_duration=None,
+            night_rating=None,
+        )
+        await show_stats(message, prev_day)
     await state.update_data(start_night_sleep_time=start_night_sleep_time)
+    await state.set_state(Night.middle)
     await message.answer("Отмечено начало ночного сна", reply_markup=END_SLEEP_KEYBOARD)
 
 
@@ -67,13 +103,14 @@ async def night_rating(call: CallbackQuery, state: FSMContext):
         start_night_sleep_time, end_night_sleep_time
     )
     night_rating = int(call.data)
-    success = scheduleapi.create(
-        user_id=id,
+    success = scheduleapi.update(
+        id=id,
         date=date,
-        start_night_sleep_time=start_night_sleep_time,
-        end_night_sleep_time=end_night_sleep_time,
-        night_duration=night_duration,
-        night_rating=night_rating,
+        payload={
+            "start_day": end_night_sleep_time,
+            "night_duration": night_duration,
+            "night_rating": night_rating,
+        },
     )
     if success:
         await state.clear()
