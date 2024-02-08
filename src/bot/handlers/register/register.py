@@ -142,9 +142,7 @@ async def end_night_time(message: Message, state: FSMContext):
     current_date = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d")
     end_night_time = datetime.strptime(
         f"{current_date} {end_night_time}", "%Y-%m-%d %H:%M"
-    ).replace(
-        tzinfo=pytz.timezone("Europe/Moscow"),
-    )
+    ).astimezone(pytz.timezone("Europe/Moscow"))
     current_time = datetime.now(pytz.timezone("Europe/Moscow"))
     child_age = childapi.read(user_id=message.from_user.id)["age"]
 

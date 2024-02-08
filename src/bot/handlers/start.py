@@ -246,12 +246,10 @@ async def end_day(message: Message, state: FSMContext):
 
     start_sleep = datetime.strptime(
         current_date + " " + start_sleep, "%Y-%m-%d %H:%M"
-    ).replace(tzinfo=pytz.timezone("Europe/Moscow"))
-
+    ).astimezone(pytz.timezone("Europe/Moscow"))
     end_sleep = datetime.strptime(
         current_date + " " + end_sleep, "%Y-%m-%d %H:%M"
-    ).replace(tzinfo=pytz.timezone("Europe/Moscow"))
-
+    ).astimezone(pytz.timezone("Europe/Moscow"))
     child_age = childapi.read(user_id=message.from_user.id)["age"]
     sleep = [
         {
