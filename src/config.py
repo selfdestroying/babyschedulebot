@@ -26,7 +26,7 @@ class BotConfig:
 class Configuration:
     """All in one configuration's class."""
 
-    locale = getenv("LOCALE")
+    locale = "ru_RU.UTF-8"
     debug = bool(getenv("DEBUG"))
     logging_level = int(getenv("LOGGING_LEVEL", logging.INFO))
     supabase = DataBaseConfig()

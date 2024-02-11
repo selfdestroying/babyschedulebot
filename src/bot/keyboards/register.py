@@ -8,13 +8,27 @@ from aiogram_calendar import DialogCalendar
 
 from src.config import conf
 
-REGISTER_START_CONFIRM = ReplyKeyboardMarkup(
+REGISTER_CONFIRM_KEYBOARD = ReplyKeyboardMarkup(
     keyboard=[[KeyboardButton(text="Начать регистрацию")]], resize_keyboard=True
 )
 CHILD_GENDER_KEYBOARD = InlineKeyboardMarkup(
     inline_keyboard=[
-        [InlineKeyboardButton(text="Мальчик", callback_data="male")],
-        [InlineKeyboardButton(text="Девочка", callback_data="female")],
+        [InlineKeyboardButton(text="Мальчик 🙋", callback_data="male")],
+        [InlineKeyboardButton(text="Девочка 🙋‍♀️", callback_data="female")],
+    ]
+)
+
+FOOD_TYPE_KEYBOARD = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Грудь 🤱", callback_data="breast"),
+        ],
+        [
+            InlineKeyboardButton(text="Смесь 🍼", callback_data="formula"),
+        ],
+        [
+            InlineKeyboardButton(text="Грудь 🤱 и Смесь 🍼", callback_data="mix"),
+        ],
     ]
 )
 

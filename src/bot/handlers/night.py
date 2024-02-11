@@ -14,8 +14,7 @@ from src.api.dbapi import scheduleapi
 from src.bot.filters.time import TimeFilter
 from src.bot.handlers.stats import show_stats
 from src.bot.keyboards.menu import MENU_KEYBOARD
-from src.bot.keyboards.night import BACK_KEYBOARD, END_SLEEP_KEYBOARD, get_rate_kb
-from src.locales.ru import TEXT
+from src.bot.keyboards.night import BACK_KEYBOARD, END_SLEEP_KEYBOARD
 from src.utils.differences import calculate_minutes_difference
 
 router = Router()
@@ -87,7 +86,7 @@ async def end_night_sleep_time_answer(message: Message, state: FSMContext):
     await state.update_data(end_night_sleep_time=message.text)
     await state.set_state(Night.night_rating)
     await message.answer("Отмечено окончание ночного сна")
-    await message.answer(TEXT["ru"]["rate"], reply_markup=get_rate_kb())
+    # await message.answer(TEXT["ru"]["rate"], reply_markup=get_rate_kb())
 
 
 @router.callback_query(

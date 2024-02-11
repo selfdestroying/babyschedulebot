@@ -13,7 +13,6 @@ from aiogram.types import (
     Message,
     ReplyKeyboardRemove,
 )
-from aiogram.utils.markdown import hbold
 
 from src.api.analysis import ideal_data
 from src.api.analysis.analysis import compare_day_sleep
@@ -24,8 +23,7 @@ from src.bot.handlers.night import Night
 from src.bot.handlers.register.register import RegisterGroup
 from src.bot.keyboards.menu import MENU_KEYBOARD
 from src.bot.keyboards.night import BACK_KEYBOARD
-from src.bot.keyboards.register import REGISTER_START_CONFIRM
-from src.locales.ru import TEXT
+from src.phrases import ru
 from src.utils.differences import calculate_minutes_difference
 
 router = Router()
@@ -33,36 +31,18 @@ router = Router()
 
 @router.message(CommandStart(), RegisterFilter())
 async def start_w_register(message: Message, state: FSMContext):
-    await message.answer(
-        TEXT["ru"]["start"].format(hbold(message.from_user.first_name)),
-        reply_markup=REGISTER_START_CONFIRM,
-    )
-    await state.set_state(RegisterGroup.confirmation)
+    id = message.from_user.id
+    user_name = message.from_user.first_name
+    await state.set_state(RegisterGroup.user_problem)
+    await state.set_data({"id": id, "user_name": user_name})
+    await message.answer(ru.HELLO.format(user_name))
+    await asyncio.sleep(1)
+    await message.answer(ru.ABOUT_1)
+    await asyncio.sleep(1)
+    await message.answer(ru.ASK_PROBLEM)
 
 
-@router.message(CommandStart())
-async def start_wo_register(message: Message, state: FSMContext) -> None:
-    await state.clear()
-    await message.answer(
-        "Вы в главном меню. Выберите нужную команду при помощи кнопки",
-        reply_markup=MENU_KEYBOARD,
-    )
-
-
-@router.message(StateFilter(None), Command("menu"))
-async def menu(message: Message, state: FSMContext) -> None:
-    await state.clear()
-    await message.answer(
-        "Вы в главном меню. Выберите нужную команду при помощи кнопки",
-        reply_markup=MENU_KEYBOARD,
-    )
-
-
-# class Night(StatesGroup):
-#     start = State()
-#     end = State()
-
-
+# TODO: refactor
 class Day(StatesGroup):
     start = State()
     end = State()

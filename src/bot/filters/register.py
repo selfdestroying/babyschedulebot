@@ -1,3 +1,5 @@
+import re
+
 from aiogram.filters import BaseFilter
 from aiogram.types import Message
 
@@ -12,3 +14,11 @@ class RegisterFilter(BaseFilter):
             return False
         else:
             return True
+
+
+class EmailFilter(BaseFilter):
+    async def __call__(self, message: Message):
+        if re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", message.text):
+            return True
+        else:
+            return False

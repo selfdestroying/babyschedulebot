@@ -16,66 +16,76 @@ from aiogram_calendar import DialogCalendar, DialogCalendarCallback
 
 from src.api.analysis import ideal_data
 from src.api.dbapi import childapi, scheduleapi
+from src.bot.filters.register import EmailFilter
 from src.bot.filters.time import TimeFilter
 from src.bot.handlers.register import router
 from src.bot.handlers.register.fsm import RegisterGroup
-from src.bot.handlers.register.helpers import register_user_and_child
 from src.bot.keyboards.menu import MENU_KEYBOARD
 from src.bot.keyboards.register import (
     CHILD_GENDER_KEYBOARD,
+    FOOD_TYPE_KEYBOARD,
+    REGISTER_CONFIRM_KEYBOARD,
     SEND_PHONE_KEYBOARD,
     get_calendar_keyboard,
 )
 from src.config import conf
-from src.locales.ru import TEXT
-from src.utils.differences import calculate_minutes_difference
-
-
-@router.message(F.text == "Начать регистрацию", RegisterGroup.confirmation)
-async def register_confirmation(message: Message, state: FSMContext):
-    await state.update_data(user_id=message.from_user.id)
-    await state.update_data(user_name=message.from_user.full_name)
-    await state.set_state(RegisterGroup.user_phone)
-    await message.answer(TEXT["ru"]["ask_user_phone"], reply_markup=SEND_PHONE_KEYBOARD)
-
-
-@router.message(
-    RegisterGroup.user_phone,
-    F.contact,
+from src.phrases import ru
+from src.utils.differences import (
+    calculate_child_age_in_months,
+    calculate_minutes_difference,
 )
+
+
+@router.message(RegisterGroup.user_problem, F.text)
+async def user_problem(message: Message, state: FSMContext) -> None:
+    await state.update_data(user_problem=message.text)
+    await state.set_state(RegisterGroup.confirmation)
+    await message.answer(ru.ABOUT_2)
+    await asyncio.sleep(1)
+    await message.answer(ru.REGISTER_CONFIRM, reply_markup=REGISTER_CONFIRM_KEYBOARD)
+
+
+@router.message(RegisterGroup.confirmation, F.text == "Начать регистрацию")
+async def register_confirmation(message: Message, state: FSMContext):
+    await state.set_state(RegisterGroup.user_phone)
+    await message.answer(ru.ASK_PHONE, reply_markup=SEND_PHONE_KEYBOARD)
+
+
+# TODO: bug, user can share another contact
+@router.message(RegisterGroup.user_phone, F.contact)
 async def user_phone(message: Message, state: FSMContext):
     await state.update_data(user_phone=message.contact.phone_number)
     await state.set_state(RegisterGroup.user_email)
-    await message.answer(
-        TEXT["ru"]["ask_user_email"], reply_markup=ReplyKeyboardRemove()
-    )
+    await message.answer(ru.ASK_EMAIL, reply_markup=ReplyKeyboardRemove())
 
 
-@router.message(
-    RegisterGroup.user_email,
-    F.text.regexp(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
-)
+@router.message(RegisterGroup.user_email, EmailFilter())
 async def user_email(message: Message, state: FSMContext):
     await state.update_data(user_email=message.text)
-    await state.set_state(RegisterGroup.user_problem)
-    await message.answer(TEXT["ru"]["ask_problem"])
-
-
-@router.message(RegisterGroup.user_problem)
-async def user_problem(message: Message, state: FSMContext) -> None:
-    await state.update_data(user_problem=message.text)
     await state.set_state(RegisterGroup.child_name)
-    await message.answer(TEXT["ru"]["ask_child_name"])
+    await message.answer(ru.ABOUT_3)
+    await asyncio.sleep(1)
+    await message.answer(ru.ASK_CHILD_NAME)
 
 
-@router.message(RegisterGroup.child_name)
+@router.message(RegisterGroup.child_name, F.text)
 async def child_name(message: Message, state: FSMContext):
     await state.update_data(child_name=message.text)
+    await state.set_state(RegisterGroup.child_gender)
+    await message.answer(ru.ASK_CHILD_GENDER, reply_markup=CHILD_GENDER_KEYBOARD)
+
+
+@router.callback_query(RegisterGroup.child_gender, F.data)
+async def child_gender(callback_query: CallbackQuery, state: FSMContext):
+    child_gender = callback_query.data
+    child_name = (await state.get_data())["child_name"]
+    await state.update_data(child_gender=child_gender)
     await state.set_state(RegisterGroup.child_birth_date)
-    await message.answer(
-        TEXT["ru"]["ask_child_age"],
+    await callback_query.message.edit_text(
+        ru.ASK_CHILD_BIRTH_DATE[child_gender].format(child_name),
         reply_markup=await get_calendar_keyboard(),
     )
+    await callback_query.answer()
 
 
 @router.callback_query(DialogCalendarCallback.filter())
@@ -86,51 +96,50 @@ async def process_child_birth_date(
         callback_query, callback_data
     )
     if selected:
-        if date.astimezone(pytz.timezone("Etc/GMT-3")) > datetime.now(
-            pytz.timezone("Etc/GMT-3")
-        ):
+        if date > datetime.now():
             await callback_query.message.edit_text(
                 "Нельзя выбрать будущую дату ❌. Выберите другую дату.",
                 reply_markup=await get_calendar_keyboard(),
             )
         else:
+            date = date.strftime("%Y-%m-%d")
+            child_age = calculate_child_age_in_months(date)
             await state.update_data(child_birth_date=date)
-            await state.set_state(RegisterGroup.child_gender)
-            await callback_query.message.edit_text(
-                "Выбранная дата: {}".format(date.strftime("%d.%m.%Y"))
-            )
+            await state.update_data(child_age=child_age)
+            await state.set_state(RegisterGroup.food_type)
             await callback_query.message.answer(
-                TEXT["ru"]["ask_child_gender"], reply_markup=CHILD_GENDER_KEYBOARD
+                ru.ASK_FOOD_TYPE, reply_markup=FOOD_TYPE_KEYBOARD
             )
 
 
-@router.callback_query(RegisterGroup.child_gender, F.data.in_(["male", "female"]))
-async def child_gender(call: CallbackQuery, state: FSMContext):
-    await state.update_data(child_gender=call.data)
-    await state.set_state(RegisterGroup.food_type)
-    await call.message.edit_text(TEXT["ru"]["ask_food_type"])
-    await call.answer()
-
-
-@router.message(RegisterGroup.food_type)
-async def food_type(message: Message, state: FSMContext):
-    await state.update_data(food_type=message.text)
+@router.callback_query(RegisterGroup.food_type, F.data)
+async def food_type(callback_query: CallbackQuery, state: FSMContext):
+    await state.update_data(food_type=callback_query.data)
     data = await state.get_data()
-    register_user_and_child(data)
-    await state.set_state(RegisterGroup.start_night_time)
-    await message.answer(
-        "Регистрация прошла успешно!\nТеперь для точности статистики мне нужно узнать информацию по прошедшей ночи."
+    print(data)
+    # register_user_and_child(data)
+    # await state.set_state(RegisterGroup.start_night_time)
+    await callback_query.message.answer(ru.ABOUT_4)
+    await asyncio.sleep(1)
+    await callback_query.message.answer(ru.ABOUT_5)
+    await asyncio.sleep(1)
+    await callback_query.message.answer(ru.ABOUT_6)
+    await asyncio.sleep(1)
+    await callback_query.message.answer(ru.ASK_PREV_NIGHT)
+    await asyncio.sleep(1)
+    await callback_query.message.answer(
+        ru.ASK_PREV_NIGHT_START_SLEEP[data.get("child_gender")].format(
+            data.get("child_name")
+        )
     )
-    await message.answer("Во сколько вы уснули вчера ночью?")
+    await callback_query.answer()
 
 
 @router.message(RegisterGroup.start_night_time, TimeFilter())
 async def start_night_time(message: Message, state: FSMContext):
     await state.update_data(start_night_time=message.text)
     await state.set_state(RegisterGroup.end_night_time)
-    await message.answer(
-        "Во сколько вы проснулись сегодня утром?\n\n<i>Если сейчас утро и ребёнок еще не проснулся, то дождитесь когда он проснётся и напишите время</i>"
-    )
+    await message.answer(ru.ASK_PREV_NIGHT_END_SLEEP)
 
 
 @router.message(RegisterGroup.end_night_time, TimeFilter())
