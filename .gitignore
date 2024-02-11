@@ -1,0 +1,9 @@
+# Folders
+.venv/
+.git/
+.idea/
+__pycache__/
+# Files
+.env
+package.json
+yarn.lock
