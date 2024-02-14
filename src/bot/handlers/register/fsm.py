@@ -12,3 +12,5 @@ class RegisterGroup(StatesGroup):
     food_type = State()
     start_night_time = State()
     end_night_time = State()
+    night_wake_up_count = State()
+    night_rating = State()

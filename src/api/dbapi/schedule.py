@@ -10,6 +10,7 @@ def create(
     start_prev_night: str,
     night_duration: int,
     night_rating: int,
+    night_wake_up_count: int,
 ) -> bool:
     try:
         response = (
@@ -23,6 +24,7 @@ def create(
                     "start_prev_night": start_prev_night,
                     "night_duration": night_duration,
                     "night_rating": night_rating,
+                    "night_wake_up_count": night_wake_up_count,
                 }
             )
             .execute()

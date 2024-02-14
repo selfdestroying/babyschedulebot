@@ -1,1 +1,1 @@
-from .router import router  # noqa: F401
+from .register import register_router  # noqa: F401

@@ -1,17 +1,21 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 from aiogram import F, Router
-from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, ReplyKeyboardRemove
+from arq import ArqRedis
+from arq.jobs import Job
 
 from src.api.dbapi import scheduleapi
+from src.bot.filters.time import TimeFilter
+from src.bot.handlers.menu import MenuGroup
 from src.bot.keyboards.menu import MENU_KEYBOARD
+from src.phrases import ru
 from src.utils.differences import calculate_minutes_difference
 
-router = Router()
+day_router = Router()
 
 
 class Day(StatesGroup):
@@ -19,63 +23,100 @@ class Day(StatesGroup):
     wake_up_time = State()
 
 
-@router.message(StateFilter(None), F.text == "Отметить время дневного сна ☀️")
-@router.callback_query(F.data == "day_sleep")
-async def day_sleep_time(message: Message, state: FSMContext):
-    id = message.from_user.id
-    current_date = datetime.now(pytz.timezone("Etc/GMT-3")).strftime("%Y-%m-%d")
-    schedule = scheduleapi.read(user_id=id, date=current_date)
-    if schedule:
-        await state.update_data(id=id)
-        await state.update_data(date=current_date)
-        await state.set_state(Day.fall_asleep_time)
-        await message.answer(
-            "Когда вы уснули днем? (Введите время в формате ЧЧ:ММ)",
-            reply_markup=ReplyKeyboardRemove(),
-        )
-    else:
-        await message.answer(
-            "Нет данных про ночной сон. Пожалуйста сначала отметьте начало и конец ночного сна",
-            reply_markup=MENU_KEYBOARD,
-        )
-
-
-@router.message(
-    Day.fall_asleep_time,
-    F.text.regexp(r"^\d{2}:\d{2}$"),
-)
-async def fall_asleep_time(message: Message, state: FSMContext):
-    await state.update_data(fall_asleep_time=message.text)
-    await state.set_state(Day.wake_up_time)
-    await message.answer("Когда вы проснулись днем? (Введите время в формате ЧЧ:ММ)")
-
-
-@router.message(
-    Day.wake_up_time,
-    F.text.regexp(r"^\d{2}:\d{2}$"),
-)
-async def wake_up_time(message: Message, state: FSMContext):
-    await state.update_data(wake_up_time=message.text)
+@day_router.message(MenuGroup.menu, F.text == "Отметить время дневного сна ☀️")
+async def day_sleep_time(message: Message, state: FSMContext, arqredis: ArqRedis):
     data = await state.get_data()
+    job_id = data.get("day_fall_asleep_job_id")
+    await arqredis.delete(f"arq:job:{job_id}")
+    child_name = data.get("child_name")
+    child_gender = data.get("child_gender")
+    await state.set_state(Day.fall_asleep_time)
+    await message.answer(
+        ru.DAY_FALL_ASLEEP[child_gender].format(child_name),
+        reply_markup=ReplyKeyboardRemove(),
+    )
+
+
+@day_router.message(Day.fall_asleep_time, TimeFilter())
+async def fall_asleep_time(message: Message, state: FSMContext, arqredis: ArqRedis):
+    data = await state.get_data()
+    child_name = data.get("child_name")
+    child_gender = data.get("child_gender")
+    ideal_sleep = data.get("ideal_data_for_age")["day"]["sleep"]["average_duration"]
+    ideal_sleep_l = ideal_sleep[0]
+    ideal_sleep_r = ideal_sleep[1]
+    await state.update_data(fall_asleep_time=message.text + ":00")
+    await state.set_state(Day.wake_up_time)
+    await message.answer(ru.DAY_WAKE_UP[child_gender].format(child_name))
+    # TODO: replace minutes from 1 to wake up time
+    day_wake_up_job_id: Job = await arqredis.enqueue_job(
+        "send_message",
+        _defer_by=timedelta(minutes=1),
+        chat_id=message.from_user.id,
+        text="Проснулись?",
+    )
+    await state.update_data(day_wake_up_job_id=day_wake_up_job_id.job_id)
+
+
+@day_router.message(Day.wake_up_time, TimeFilter())
+async def wake_up_time(message: Message, state: FSMContext, arqredis: ArqRedis):
+    await state.update_data(wake_up_time=message.text + ":00")
+    data = await state.get_data()
+    job_id = data.get("day_wake_up_job_id")
+    await arqredis.delete(f"arq:job:{job_id}")
     id = data.get("id")
-    date = data.get("date")
-    fall_asleep_time = data.get("fall_asleep_time") + ":00"
-    wake_up_time = data.get("wake_up_time") + ":00"
+    child_name = data.get("child_name")
+    child_gender = data.get("child_gender")
+    fall_asleep_time = data.get("fall_asleep_time")
+    wake_up_time = data.get("wake_up_time")
+    current_date = datetime.now(pytz.timezone("Etc/GMT-3"))
     total_minutes = calculate_minutes_difference(fall_asleep_time, wake_up_time)
     scheduleapi.update_sleeps(
         user_id=id,
-        date=date,
+        date=current_date.strftime("%Y-%m-%d"),
         sleep={
             "start_sleep_time": fall_asleep_time,
             "end_sleep_time": wake_up_time,
             "sleep_duration": total_minutes,
         },
     )
-    await message.answer(f"Вы спали {total_minutes} минут", reply_markup=MENU_KEYBOARD)
-    await state.clear()
+    wake_up_time = datetime.strptime(
+        f'{current_date.strftime("%Y-%m-%d")} {wake_up_time}',
+        "%Y-%m-%d %H:%M:%S",
+    ).replace(tzinfo=pytz.timezone("Etc/GMT-3"))
+    ideal_data_for_age = data.get("ideal_data_for_age")["day"]["activity"][
+        "average_duration"
+    ]
+
+    ideal_time_left = ideal_data_for_age[0]
+    ideal_time_right = ideal_data_for_age[1]
+
+    next_sleep_start_left = wake_up_time + timedelta(minutes=ideal_time_left)
+    next_sleep_start_right = wake_up_time + timedelta(minutes=ideal_time_right)
+    if (current_date - wake_up_time) < timedelta(minutes=30):
+        await message.answer(
+            ru.DAY_SLEEP_ANALYSIS[child_gender].format(
+                child_name,
+                round(total_minutes / 60, 1),
+                "?",
+                round(ideal_time_left / 60, 1),
+                round(ideal_time_right / 60, 1),
+                next_sleep_start_left.strftime("%H:%M"),
+                next_sleep_start_right.strftime("%H:%M"),
+            )
+        )
+        day_fall_asleep_job_id: Job = await arqredis.enqueue_job(
+            "send_message",
+            _defer_by=timedelta(minutes=1),
+            chat_id=id,
+            text="Уснули?",
+        )
+        await state.update_data(day_fall_asleep_job_id=day_fall_asleep_job_id.job_id)
+    await message.answer(ru.PRESS_END_DAY_SLEEP_BUTTON, reply_markup=MENU_KEYBOARD)
+    await state.set_state(MenuGroup.menu)
 
 
-@router.message(Day.fall_asleep_time, F.text)
-@router.message(Day.wake_up_time, F.text)
+@day_router.message(Day.fall_asleep_time, F.text)
+@day_router.message(Day.wake_up_time, F.text)
 async def wrong_time_answer(message: Message):
-    await message.answer("Неправильный формат времени. Введите время в формате ЧЧ:ММ")
+    await message.answer(ru.WRONG_TIME)
