@@ -20,6 +20,7 @@ async def start_bot():
             host=conf.redis.host,
             username=conf.redis.username,
             port=conf.redis.port,
+            password=conf.redis.passwd,
         )
     )
     redis_pool = await create_pool(conf.redis.pool_settings)

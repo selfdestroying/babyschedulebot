@@ -28,7 +28,9 @@ class RedisConfig:
     username: str | None = getenv("REDIS_USERNAME")
     state_ttl: int | None = getenv("REDIS_TTL_STATE", None)
     data_ttl: int | None = getenv("REDIS_TTL_DATA", None)
-    pool_settings = RedisSettings(host=host, port=port, database=db, username=username)
+    pool_settings = RedisSettings(
+        host=host, port=port, database=db, username=username, password=passwd
+    )
 
 
 @dataclass
