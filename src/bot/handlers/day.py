@@ -27,7 +27,8 @@ class Day(StatesGroup):
 async def day_sleep_time(message: Message, state: FSMContext, arqredis: ArqRedis):
     data = await state.get_data()
     job_id = data.get("day_fall_asleep_job_id")
-    await arqredis.delete(f"arq:job:{job_id}")
+    if job_id:
+        await arqredis.delete(f"arq:job:{job_id}")
     child_name = data.get("child_name")
     child_gender = data.get("child_gender")
     await state.set_state(Day.fall_asleep_time)
@@ -43,7 +44,6 @@ async def fall_asleep_time(message: Message, state: FSMContext, arqredis: ArqRed
     child_name = data.get("child_name")
     child_gender = data.get("child_gender")
     ideal_sleep = data.get("ideal_data_for_age")["day"]["sleep"]["average_duration"]
-    ideal_sleep_l = ideal_sleep[0]
     ideal_sleep_r = ideal_sleep[1]
     await state.update_data(fall_asleep_time=message.text + ":00")
     await state.set_state(Day.wake_up_time)
@@ -51,7 +51,7 @@ async def fall_asleep_time(message: Message, state: FSMContext, arqredis: ArqRed
     # TODO: replace minutes from 1 to wake up time
     day_wake_up_job_id: Job = await arqredis.enqueue_job(
         "send_message",
-        _defer_by=timedelta(minutes=1),
+        _defer_by=timedelta(minutes=ideal_sleep_r),
         chat_id=message.from_user.id,
         text="Проснулись?",
     )
@@ -107,7 +107,7 @@ async def wake_up_time(message: Message, state: FSMContext, arqredis: ArqRedis):
         )
         day_fall_asleep_job_id: Job = await arqredis.enqueue_job(
             "send_message",
-            _defer_by=timedelta(minutes=1),
+            _defer_by=timedelta(minutes=ideal_time_right),
             chat_id=id,
             text="Уснули?",
         )

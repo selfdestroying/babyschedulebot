@@ -174,6 +174,31 @@ async def food_type(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
 
 
+# @register_router.message(StateFilter(RegisterGroup), F.text == "Исправить 🔙")
+# async def correct_answer(message: Message, state: FSMContext):
+#     current_state = await state.get_state()
+
+#     print(current_state)
+#     if current_state == "RegisterGroup:child_gender":
+#         await state.set_state(RegisterGroup.child_name)
+#         await message.answer(ru.ASK_CHILD_NAME)
+#     elif current_state == "RegisterGroup:child_birth_date":
+#         await state.set_state(RegisterGroup.child_gender)
+#         await message.answer(ru.ASK_CHILD_GENDER, reply_markup=CHILD_GENDER_KEYBOARD)
+#     elif current_state == "RegisterGroup:food_type":
+#         data = await state.get_data()
+#         child_name = data["child_name"]
+#         child_gender = data["child_gender"]
+#         await state.set_state(RegisterGroup.child_birth_date)
+#         await message.answer(
+#             ru.ASK_CHILD_BIRTH_DATE[child_gender].format(child_name),
+#             reply_markup=await get_calendar_keyboard(),
+#         )
+#     elif current_state == "RegisterGroup:end_night_time":
+#         await state.set_state(RegisterGroup.food_type)
+#         await message.answer(ru.ASK_FOOD_TYPE, reply_markup=FOOD_TYPE_KEYBOARD)
+
+
 @register_router.message(RegisterGroup.start_night_time, TimeFilter())
 async def start_night_time(message: Message, state: FSMContext):
     data = await state.get_data()
@@ -181,7 +206,10 @@ async def start_night_time(message: Message, state: FSMContext):
     child_name = data["child_name"]
     await state.update_data(start_night_time=message.text + ":00")
     await state.set_state(RegisterGroup.end_night_time)
-    await message.answer(ru.ASK_PREV_NIGHT_END_SLEEP[child_gender].format(child_name))
+    await message.answer(
+        ru.ASK_PREV_NIGHT_END_SLEEP[child_gender].format(child_name),
+        reply_markup=ReplyKeyboardRemove(),
+    )
 
 
 @register_router.message(RegisterGroup.end_night_time, TimeFilter())
@@ -265,7 +293,7 @@ async def night_rating(
         # TODO: replace minutes from 1 to next sleep time
         day_fall_asleep_job_id: Job = await arqredis.enqueue_job(
             "send_message",
-            _defer_by=timedelta(minutes=1),
+            _defer_by=timedelta(minutes=ideal_time_right),
             chat_id=callback_query.from_user.id,
             text="Уснули?",
         )

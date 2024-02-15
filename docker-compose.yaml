@@ -1,0 +1,20 @@
+version: '3.7'
+services:
+  redis:
+    build:
+      context: .
+      dockerfile: redis.dockerfile
+    env_file:
+      - .env
+    restart: on-failure
+    ports:
+      - '6378:6378'
+  bot:
+    build:
+      context: .
+      dockerfile: DockerFile
+    env_file:
+      - .env
+    restart: always
+    depends_on:
+      - redis

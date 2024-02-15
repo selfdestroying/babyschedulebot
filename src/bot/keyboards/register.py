@@ -40,6 +40,10 @@ SEND_PHONE_KEYBOARD = ReplyKeyboardMarkup(
     one_time_keyboard=True,
 )
 
+CORRECT_ANSWER_KEYBOARD = ReplyKeyboardMarkup(
+    keyboard=[[KeyboardButton(text="Исправить 🔙")]], resize_keyboard=True
+)
+
 
 async def get_calendar_keyboard():
     return await DialogCalendar(locale=conf.locale).start_calendar()

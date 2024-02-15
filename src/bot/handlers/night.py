@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 from aiogram import F, Router
@@ -8,10 +8,12 @@ from aiogram.types import (
     CallbackQuery,
     Message,
 )
+from arq import ArqRedis
 
 from src.api.analysis.analysis import get_recomendation
 from src.api.dbapi import scheduleapi
 from src.bot.filters.time import TimeFilter
+from src.bot.handlers.day import Day
 from src.bot.handlers.menu import MenuGroup
 from src.bot.handlers.register.fsm import RegisterGroup
 from src.bot.keyboards.night import END_SLEEP_KEYBOARD, get_rate_kb
@@ -47,13 +49,18 @@ async def start_night_time_answer(message: Message, state: FSMContext):
 @night_router.callback_query(
     Night.day_rating, F.data.in_(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"])
 )
-async def day_rating(callback_query: CallbackQuery, state: FSMContext):
+async def day_rating(
+    callback_query: CallbackQuery, state: FSMContext, arqredis: ArqRedis
+):
     await state.update_data(day_rating=callback_query.data)
     current_date = datetime.now(pytz.timezone("Etc/GMT-3"))
     data = await state.get_data()
     id = callback_query.from_user.id
     start_night_time = data.get("start_night_time")
     child_age = data.get("child_age")
+    ideal_data = data.get("ideal_data_for_age")
+    ideal_night_sleep = ideal_data["night"]["total"][1]
+
     scheduleapi.update(
         id=id,
         date=current_date.strftime("%Y-%m-%d"),
@@ -62,8 +69,16 @@ async def day_rating(callback_query: CallbackQuery, state: FSMContext):
     schedule = scheduleapi.read(user_id=id, date=current_date)
     data, text = get_recomendation(child_age=child_age, schedule=schedule)
     scheduleapi.update(id, current_date, data)
-    await callback_query.message.answer(text, reply_markup=END_SLEEP_KEYBOARD)
     await state.set_state(Night.middle)
+    await callback_query.message.answer(text, reply_markup=END_SLEEP_KEYBOARD)
+    await callback_query.message.answer(ru.RECOMENDATION)
+    wake_up_job_id = await arqredis.enqueue_job(
+        "send_message",
+        _defer_by=timedelta(minutes=ideal_night_sleep),
+        chat_id=id,
+        text="Проснулись?",
+    )
+    await state.update_data(wake_up_job_id=wake_up_job_id.job_id)
     await callback_query.answer()
     # id = message.from_user.id
     # current_date = datetime.now(pytz.timezone("Etc/GMT-3"))
@@ -104,12 +119,29 @@ async def day_rating(callback_query: CallbackQuery, state: FSMContext):
 
 
 @night_router.message(Night.middle, F.text == "Отметить окончание ночного сна 🌅")
-async def end_night_sleep_time(message: Message, state: FSMContext):
+async def end_night_sleep_time(message: Message, state: FSMContext, arqredis: ArqRedis):
     data = await state.get_data()
     child_name = data.get("child_name")
     child_gender = data.get("child_gender")
+    wake_up_job_id = data.get("wake_up_job_id")
+    await arqredis.delete(f"arq:job:{wake_up_job_id}")
     await state.set_state(RegisterGroup.end_night_time)
     await message.answer(ru.ASK_PREV_NIGHT_END_SLEEP[child_gender].format(child_name))
+
+
+@night_router.message(
+    Night.middle, F.text == "Проснулись. Это оказался не ночной сон 😔"
+)
+async def wrong_night_sleep(message: Message, state: FSMContext, arqredis: ArqRedis):
+    data = await state.get_data()
+    child_name = data.get("child_name")
+    child_gender = data.get("child_gender")
+    wake_up_job_id = data.get("wake_up_job_id")
+    await arqredis.delete(f"arq:job:{wake_up_job_id}")
+    start_night_time = data.get("start_night_time")
+    await state.update_data(fall_asleep_time=start_night_time)
+    await state.set_state(Day.wake_up_time)
+    await message.answer(ru.DAY_WAKE_UP[child_gender].format(child_name))
 
 
 # @night_router.message(Night.end_night_sleep_time, TimeFilter())
