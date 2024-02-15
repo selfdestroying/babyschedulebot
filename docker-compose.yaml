@@ -18,3 +18,13 @@ services:
     restart: always
     depends_on:
       - redis
+  scheduler:
+    build:
+      context: .
+      dockerfile: scheduler.dockerfile
+    env_file:
+      - .env
+    restart: always
+    depends_on:
+      - redis
+      - bot
