@@ -293,10 +293,11 @@ async def night_rating(
         # TODO: replace minutes from 1 to next sleep time
         day_fall_asleep_job_id: Job = await arqredis.enqueue_job(
             "send_message",
-            _defer_by=timedelta(minutes=ideal_time_right),
+            _defer_by=(next_sleep_start_left - current_date).seconds,
             chat_id=callback_query.from_user.id,
             text="Уснули?",
         )
+        print(await day_fall_asleep_job_id.status())
         await state.update_data(day_fall_asleep_job_id=day_fall_asleep_job_id.job_id)
     await callback_query.message.answer(
         ru.PRESS_END_DAY_SLEEP_BUTTON, reply_markup=MENU_KEYBOARD

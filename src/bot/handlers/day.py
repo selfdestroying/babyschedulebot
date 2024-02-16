@@ -55,6 +55,7 @@ async def fall_asleep_time(message: Message, state: FSMContext, arqredis: ArqRed
         chat_id=message.from_user.id,
         text="Проснулись?",
     )
+    print(await day_wake_up_job_id.status())
     await state.update_data(day_wake_up_job_id=day_wake_up_job_id.job_id)
 
 
@@ -107,7 +108,7 @@ async def wake_up_time(message: Message, state: FSMContext, arqredis: ArqRedis):
         )
         day_fall_asleep_job_id: Job = await arqredis.enqueue_job(
             "send_message",
-            _defer_by=timedelta(minutes=ideal_time_right),
+            _defer_by=(next_sleep_start_right - current_date).seconds,
             chat_id=id,
             text="Уснули?",
         )

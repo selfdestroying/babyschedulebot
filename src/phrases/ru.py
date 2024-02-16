@@ -25,7 +25,7 @@ ASK_NIGHT_WAKE_UP_COUNT = {
 }
 ASK_PREV_NIGHT_END_SLEEP = {
     "male": "А во сколько {} проснулся сегодня утром?",
-    "female": "А во сколько {} проснулся сегодня утром?",
+    "female": "А во сколько {} проснулась сегодня утром?",
 }
 ASK_FOOD_TYPE = "Как вы кормите ребёнка?"
 ASK_PREV_NIGHT = (
