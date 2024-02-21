@@ -26,13 +26,15 @@ class AuthMiddleWare(BaseMiddleware):
         else:
             current_date = datetime.now(pytz.timezone("Etc/GMT-3"))
             dbuser = userapi.read(user.id)
-            dbchild = childapi.read(user.id)
-            dbschedule = scheduleapi.read(user.id, current_date)
-            dbdata = dbuser
-            dbdata.update(dbchild)
-            dbdata.update(dbschedule)
-            dbdata.update({"ideal_data_for_age": ideal_data.ideal_data[dbchild["age"]]})
             if dbuser:
+                dbchild = childapi.read(user.id)
+                dbschedule = scheduleapi.read(user.id, current_date)
+                dbdata = dbuser
+                dbdata.update(dbchild)
+                dbdata.update(dbschedule)
+                dbdata.update(
+                    {"ideal_data_for_age": ideal_data.ideal_data[dbchild["age"]]}
+                )
                 await state.update_data(dbdata)
             else:
                 print("User not registered")
