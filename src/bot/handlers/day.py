@@ -8,12 +8,17 @@ from aiogram.types import Message, ReplyKeyboardRemove
 from arq import ArqRedis
 from arq.jobs import Job
 
+from src.api.analysis import ideal_data
 from src.api.dbapi import scheduleapi
 from src.bot.filters.time import TimeFilter
 from src.bot.handlers.menu import MenuGroup
 from src.bot.keyboards.menu import MENU_KEYBOARD
 from src.phrases import ru
 from src.utils.differences import calculate_minutes_difference
+from src.utils.remind import (
+    calculate_time_to_remind,
+    convert_minutes_to_hours_and_minutes,
+)
 
 day_router = Router()
 
@@ -26,14 +31,15 @@ class Day(StatesGroup):
 @day_router.message(MenuGroup.menu, F.text == "Отметить время дневного сна ☀️")
 async def day_sleep_time(message: Message, state: FSMContext, arqredis: ArqRedis):
     data = await state.get_data()
+    print(data)
     job_id = data.get("day_fall_asleep_job_id")
     if job_id:
         await arqredis.delete(f"arq:job:{job_id}")
     child_name = data.get("child_name")
-    child_gender = data.get("child_gender")
+    gender = data.get("gender")
     await state.set_state(Day.fall_asleep_time)
     await message.answer(
-        ru.DAY_FALL_ASLEEP[child_gender].format(child_name),
+        ru.DAY_FALL_ASLEEP[gender].format(child_name),
         reply_markup=ReplyKeyboardRemove(),
     )
 
@@ -42,12 +48,12 @@ async def day_sleep_time(message: Message, state: FSMContext, arqredis: ArqRedis
 async def fall_asleep_time(message: Message, state: FSMContext, arqredis: ArqRedis):
     data = await state.get_data()
     child_name = data.get("child_name")
-    child_gender = data.get("child_gender")
+    gender = data.get("gender")
     ideal_sleep = data.get("ideal_data_for_age")["day"]["sleep"]["average_duration"]
     ideal_sleep_r = ideal_sleep[1]
     await state.update_data(fall_asleep_time=message.text + ":00")
     await state.set_state(Day.wake_up_time)
-    await message.answer(ru.DAY_WAKE_UP[child_gender].format(child_name))
+    await message.answer(ru.DAY_WAKE_UP[gender].format(child_name))
     # TODO: replace minutes from 1 to wake up time
     day_wake_up_job_id: Job = await arqredis.enqueue_job(
         "send_message",
@@ -67,7 +73,8 @@ async def wake_up_time(message: Message, state: FSMContext, arqredis: ArqRedis):
     await arqredis.delete(f"arq:job:{job_id}")
     id = data.get("id")
     child_name = data.get("child_name")
-    child_gender = data.get("child_gender")
+    gender = data.get("gender")
+    age = data.get("age")
     fall_asleep_time = data.get("fall_asleep_time")
     wake_up_time = data.get("wake_up_time")
     current_date = datetime.now(pytz.timezone("Etc/GMT-3"))
@@ -81,34 +88,29 @@ async def wake_up_time(message: Message, state: FSMContext, arqredis: ArqRedis):
             "sleep_duration": total_minutes,
         },
     )
-    wake_up_time = datetime.strptime(
-        f'{current_date.strftime("%Y-%m-%d")} {wake_up_time}',
-        "%Y-%m-%d %H:%M:%S",
-    ).replace(tzinfo=pytz.timezone("Etc/GMT-3"))
-    ideal_data_for_age = data.get("ideal_data_for_age")["day"]["activity"][
+
+    average_activity_duration = ideal_data.ideal_data[age]["day"]["activity"][
         "average_duration"
     ]
+    message_send_time = current_date.strftime("%H:%M:%S")
+    time_to_remind = calculate_time_to_remind(
+        wake_up_time, message_send_time, average_activity_duration
+    )
 
-    ideal_time_left = ideal_data_for_age[0]
-    ideal_time_right = ideal_data_for_age[1]
-
-    next_sleep_start_left = wake_up_time + timedelta(minutes=ideal_time_left)
-    next_sleep_start_right = wake_up_time + timedelta(minutes=ideal_time_right)
-    if (current_date - wake_up_time) < timedelta(minutes=30):
+    if time_to_remind:
         await message.answer(
-            ru.DAY_SLEEP_ANALYSIS[child_gender].format(
+            ru.DAY_SLEEP_ANALYSIS[gender].format(
                 child_name,
-                round(total_minutes / 60, 1),
-                "?",
-                round(ideal_time_left / 60, 1),
-                round(ideal_time_right / 60, 1),
-                next_sleep_start_left.strftime("%H:%M"),
-                next_sleep_start_right.strftime("%H:%M"),
+                convert_minutes_to_hours_and_minutes(total_minutes),
+                time_to_remind["activity_duration_min"],
+                time_to_remind["activity_duration_max"],
+                time_to_remind["next_fall_asleep_time_min"],
+                time_to_remind["next_fall_asleep_time_max"],
             )
         )
         day_fall_asleep_job_id: Job = await arqredis.enqueue_job(
             "send_message",
-            _defer_by=(next_sleep_start_right - current_date).seconds,
+            _defer_by=time_to_remind["time_to_remind"],
             chat_id=id,
             text="Уснули?",
         )

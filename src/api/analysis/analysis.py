@@ -64,9 +64,9 @@ def get_sleeps_all(total_day_sleep, night_duration):
 
 
 # сравнить каждый дневной сон с эталоном
-def compare_day_sleeps(sleeps: list, child_age: int, idealdata: dict):
-    n_min = idealdata[child_age]["day"]["sleep"]["average_duration"][0]
-    n_max = idealdata[child_age]["day"]["sleep"]["average_duration"][1]
+def compare_day_sleeps(sleeps: list, age: int, idealdata: dict):
+    n_min = idealdata[age]["day"]["sleep"]["average_duration"][0]
+    n_max = idealdata[age]["day"]["sleep"]["average_duration"][1]
     result = ""
     for i in range(len(sleeps)):
         n = sleeps[i]["sleep_duration"]
@@ -79,9 +79,9 @@ def compare_day_sleeps(sleeps: list, child_age: int, idealdata: dict):
     return result
 
 
-def compare_day_sleep(sleeps: list, child_age: int, idealdata: dict):
-    n_min = idealdata[child_age]["day"]["sleep"]["average_duration"][0]
-    n_max = idealdata[child_age]["day"]["sleep"]["average_duration"][1]
+def compare_day_sleep(sleeps: list, age: int, idealdata: dict):
+    n_min = idealdata[age]["day"]["sleep"]["average_duration"][0]
+    n_max = idealdata[age]["day"]["sleep"]["average_duration"][1]
     result = ""
     n = sleeps[0]["sleep_duration"]
     if n >= n_min and n <= n_max:
@@ -94,9 +94,9 @@ def compare_day_sleep(sleeps: list, child_age: int, idealdata: dict):
 
 
 # сравнить каждое бодрствование с эталоном
-def compare_day_activities(activities: list, child_age: int, idealdata: dict):
-    n_min = idealdata[child_age]["day"]["activity"]["average_duration"][0]
-    n_max = idealdata[child_age]["day"]["activity"]["average_duration"][1]
+def compare_day_activities(activities: list, age: int, idealdata: dict):
+    n_min = idealdata[age]["day"]["activity"]["average_duration"][0]
+    n_max = idealdata[age]["day"]["activity"]["average_duration"][1]
     result = ""
     for i in range(len(activities)):
         n = activities[i]["activity_duration"]
@@ -114,9 +114,9 @@ def compare_day_activities(activities: list, child_age: int, idealdata: dict):
 
 
 # сравнить сумму всех снов в течение дня с эталоном
-def compare_total_day_sleep(total_day_sleep: int, child_age: int, idealdata: dict):
-    n_min = idealdata[child_age]["day"]["sleep"]["total"][0]
-    n_max = idealdata[child_age]["day"]["sleep"]["total"][1]
+def compare_total_day_sleep(total_day_sleep: int, age: int, idealdata: dict):
+    n_min = idealdata[age]["day"]["sleep"]["total"][0]
+    n_max = idealdata[age]["day"]["sleep"]["total"][1]
     if total_day_sleep >= n_min and total_day_sleep <= n_max:
         return f"Всего дневного сна: {total_day_sleep} минут. Это норма"
     elif total_day_sleep < n_min:
@@ -126,11 +126,9 @@ def compare_total_day_sleep(total_day_sleep: int, child_age: int, idealdata: dic
 
 
 # сравнить сумму всего бодрствования с эталоном
-def compare_total_day_activity(
-    total_day_activity: int, child_age: int, idealdata: dict
-):
-    n_min = idealdata[child_age]["day"]["activity"]["total"][0]
-    n_max = idealdata[child_age]["day"]["activity"]["total"][1]
+def compare_total_day_activity(total_day_activity: int, age: int, idealdata: dict):
+    n_min = idealdata[age]["day"]["activity"]["total"][0]
+    n_max = idealdata[age]["day"]["activity"]["total"][1]
     if total_day_activity >= n_min and total_day_activity <= n_max:
         return f"Всего бодрствования: {total_day_activity} минут. Это норма"
     elif total_day_activity < n_min:
@@ -140,9 +138,9 @@ def compare_total_day_activity(
 
 
 # сравнить сумму всех снов за сутки (день+ночь) с эталоном
-def compare_sleeps_all(sleeps_all: int, child_age: int, idealdata: dict):
-    n_min = idealdata[child_age]["SLEEPS_ALL"][0]
-    n_max = idealdata[child_age]["SLEEPS_ALL"][1]
+def compare_sleeps_all(sleeps_all: int, age: int, idealdata: dict):
+    n_min = idealdata[age]["SLEEPS_ALL"][0]
+    n_max = idealdata[age]["SLEEPS_ALL"][1]
     if sleeps_all >= n_min and sleeps_all <= n_max:
         return f"Всего сна: {sleeps_all} минут. Это норма"
     elif sleeps_all < n_min:
@@ -152,9 +150,9 @@ def compare_sleeps_all(sleeps_all: int, child_age: int, idealdata: dict):
 
 
 # сравнить ночной сон с эталоном
-def compare_total_night_sleep(night_duration: int, child_age: int, idealdata: dict):
-    n_min = idealdata[child_age]["night"]["total"][0]
-    n_max = idealdata[child_age]["night"]["total"][1]
+def compare_total_night_sleep(night_duration: int, age: int, idealdata: dict):
+    n_min = idealdata[age]["night"]["total"][0]
+    n_max = idealdata[age]["night"]["total"][1]
     if night_duration >= n_min and night_duration <= n_max:
         return f"Всего ночного сна: {night_duration} минут. Это норма"
     elif night_duration < n_min:
@@ -164,9 +162,9 @@ def compare_total_night_sleep(night_duration: int, child_age: int, idealdata: di
 
 
 # сравнить количество дневных снов с эталоном
-def compare_day_sleep_amount(sleeps: list, child_age: int, idealdata: dict):
-    n_min = idealdata[child_age]["day"]["sleep"]["amount"][0]
-    n_max = idealdata[child_age]["day"]["sleep"]["amount"][1]
+def compare_day_sleep_amount(sleeps: list, age: int, idealdata: dict):
+    n_min = idealdata[age]["day"]["sleep"]["amount"][0]
+    n_max = idealdata[age]["day"]["sleep"]["amount"][1]
     n = len(sleeps)
     if n >= n_min and n <= n_max:
         return f"Всего дневных снов: {n}. Это норма"
@@ -176,7 +174,7 @@ def compare_day_sleep_amount(sleeps: list, child_age: int, idealdata: dict):
         return f"Всего дневных снов: {n}. Это больше чем нужно"
 
 
-def get_recomendation(child_age: int, schedule: dict):
+def get_recomendation(age: int, schedule: dict):
     text_message = ""
     end_day_time = schedule["end_day"]
     sleeps = schedule["sleeps"]
@@ -189,32 +187,28 @@ def get_recomendation(child_age: int, schedule: dict):
         total_day_sleep=total_day_sleep, night_duration=night_duration
     )
 
-    day_sleeps_result = compare_day_sleeps(
-        sleeps=sleeps, child_age=child_age, idealdata=ideal_data
-    )
+    day_sleeps_result = compare_day_sleeps(sleeps=sleeps, age=age, idealdata=ideal_data)
 
     day_sleep_amoun_result = compare_day_sleep_amount(
-        sleeps=sleeps, child_age=child_age, idealdata=ideal_data
+        sleeps=sleeps, age=age, idealdata=ideal_data
     )
 
     total_day_sleep_result = compare_total_day_sleep(
-        total_day_sleep=total_day_sleep, child_age=child_age, idealdata=ideal_data
+        total_day_sleep=total_day_sleep, age=age, idealdata=ideal_data
     )
 
     total_night_sleep_result = compare_total_night_sleep(
-        night_duration=night_duration, child_age=child_age, idealdata=ideal_data
+        night_duration=night_duration, age=age, idealdata=ideal_data
     )
 
-    sleep_all = compare_sleeps_all(
-        sleeps_all=sleeps_all, child_age=child_age, idealdata=ideal_data
-    )
+    sleep_all = compare_sleeps_all(sleeps_all=sleeps_all, age=age, idealdata=ideal_data)
 
     day_activities_result = compare_day_activities(
-        activities=day_activities, child_age=child_age, idealdata=ideal_data
+        activities=day_activities, age=age, idealdata=ideal_data
     )
 
     total_day_activity_result = compare_total_day_activity(
-        total_day_activity=total_day_activity, child_age=child_age, idealdata=ideal_data
+        total_day_activity=total_day_activity, age=age, idealdata=ideal_data
     )
 
     data = {

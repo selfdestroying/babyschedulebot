@@ -24,15 +24,15 @@ def register_user(data: dict[str, any]):
 def register_child(data: dict[str, any]):
     id = data.get("id")
     child_name = data.get("child_name")
-    child_gender = data.get("child_gender")
+    gender = data.get("gender")
     child_birth_date = data.get("child_birth_date")
     food_type = data.get("food_type")
-    child_age = data.get("child_age")
+    age = data.get("age")
     childapi.create(
         name=child_name,
-        gender=child_gender,
+        gender=gender,
         birth_date=child_birth_date,
-        age=child_age,
+        age=age,
         food_type=food_type,
         user_id=id,
     )

@@ -11,7 +11,7 @@ from src.config import conf
 REGISTER_CONFIRM_KEYBOARD = ReplyKeyboardMarkup(
     keyboard=[[KeyboardButton(text="Начать регистрацию")]], resize_keyboard=True
 )
-CHILD_GENDER_KEYBOARD = InlineKeyboardMarkup(
+GENDER_KEYBOARD = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Мальчик 🙋", callback_data="male")],
         [InlineKeyboardButton(text="Девочка 🙋‍♀️", callback_data="female")],

@@ -34,9 +34,9 @@ class Night(StatesGroup):
 async def start_night_time(message: Message, state: FSMContext):
     data = await state.get_data()
     child_name = data.get("child_name")
-    child_gender = data.get("child_gender")
+    gender = data.get("gender")
     await state.set_state(Night.start_night_time)
-    await message.answer(ru.NIGHT_FALL_ASLEEP[child_gender].format(child_name))
+    await message.answer(ru.NIGHT_FALL_ASLEEP[gender].format(child_name))
 
 
 @night_router.message(Night.start_night_time, TimeFilter())
@@ -57,7 +57,7 @@ async def day_rating(
     data = await state.get_data()
     id = callback_query.from_user.id
     start_night_time = data.get("start_night_time")
-    child_age = data.get("child_age")
+    age = data.get("age")
     ideal_data = data.get("ideal_data_for_age")
     ideal_night_sleep = ideal_data["night"]["total"][1]
 
@@ -67,7 +67,7 @@ async def day_rating(
         payload={"end_day": start_night_time, "day_rating": callback_query.data},
     )
     schedule = scheduleapi.read(user_id=id, date=current_date)
-    data, text = get_recomendation(child_age=child_age, schedule=schedule)
+    data, text = get_recomendation(age=age, schedule=schedule)
     scheduleapi.update(id, current_date, data)
     await state.set_state(Night.middle)
     await callback_query.message.answer(text, reply_markup=END_SLEEP_KEYBOARD)
@@ -122,11 +122,11 @@ async def day_rating(
 async def end_night_sleep_time(message: Message, state: FSMContext, arqredis: ArqRedis):
     data = await state.get_data()
     child_name = data.get("child_name")
-    child_gender = data.get("child_gender")
+    gender = data.get("gender")
     wake_up_job_id = data.get("wake_up_job_id")
     await arqredis.delete(f"arq:job:{wake_up_job_id}")
     await state.set_state(RegisterGroup.end_night_time)
-    await message.answer(ru.ASK_PREV_NIGHT_END_SLEEP[child_gender].format(child_name))
+    await message.answer(ru.ASK_PREV_NIGHT_END_SLEEP[gender].format(child_name))
 
 
 @night_router.message(
@@ -135,13 +135,21 @@ async def end_night_sleep_time(message: Message, state: FSMContext, arqredis: Ar
 async def wrong_night_sleep(message: Message, state: FSMContext, arqredis: ArqRedis):
     data = await state.get_data()
     child_name = data.get("child_name")
-    child_gender = data.get("child_gender")
+    gender = data.get("gender")
     wake_up_job_id = data.get("wake_up_job_id")
     await arqredis.delete(f"arq:job:{wake_up_job_id}")
     start_night_time = data.get("start_night_time")
     await state.update_data(fall_asleep_time=start_night_time)
     await state.set_state(Day.wake_up_time)
-    await message.answer(ru.DAY_WAKE_UP[child_gender].format(child_name))
+    await message.answer(ru.DAY_WAKE_UP[gender].format(child_name))
+
+
+@night_router.message(Night.middle)
+async def middle_message(message: Message, state: FSMContext):
+    await message.answer(
+        "Отметьте окончание ночного сна с помощью кнопки ниже ⬇️",
+        reply_markup=END_SLEEP_KEYBOARD,
+    )
 
 
 # @night_router.message(Night.end_night_sleep_time, TimeFilter())

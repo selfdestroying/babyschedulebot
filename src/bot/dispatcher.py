@@ -8,6 +8,7 @@ from aiogram.fsm.strategy import FSMStrategy
 from redis.asyncio.client import Redis
 
 from src.bot.handlers import routers
+from src.bot.middlewares.auth import AuthMiddleWare
 from src.config import conf
 
 
@@ -41,7 +42,7 @@ def get_dispatcher(
     for router in routers:
         dp.include_router(router)
 
-    print(dp.sub_routers)
     # Register middlewares
+    dp.message.outer_middleware(AuthMiddleWare())
 
     return dp

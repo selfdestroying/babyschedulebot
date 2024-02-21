@@ -7,7 +7,7 @@ class RegisterGroup(StatesGroup):
     user_email = State()
     user_problem = State()
     child_name = State()
-    child_gender = State()
+    gender = State()
     child_birth_date = State()
     food_type = State()
     start_night_time = State()

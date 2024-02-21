@@ -25,9 +25,9 @@ async def start_w_register(message: Message, state: FSMContext, arqredis: ArqRed
     await state.set_state(RegisterGroup.user_problem)
     await state.set_data({"id": id, "user_name": user_name})
     await message.answer(ru.HELLO.format(user_name))
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
     await message.answer(ru.ABOUT_1)
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
     await message.answer(ru.ASK_PROBLEM)
 
 
@@ -111,13 +111,13 @@ async def menu(message: Message, state: FSMContext):
 #     schedule = scheduleapi.read(user_id=id, date=current_date_str)
 #     child = childapi.read(user_id=message.from_user.id)
 #     child_name = child.get("name")
-#     child_age = child.get("age")
+#     age = child.get("age")
 
 #     end_night_time = schedule.get("start_day") or "-"
 #     sleeps = schedule.get("sleeps") or []
 #     start_night_time = schedule.get("start_prev_night") or "-"
 
-#     html_child_info_text = f"👶 <b>{child_name}</b> - {child_age} месяцев\n\n"
+#     html_child_info_text = f"👶 <b>{child_name}</b> - {age} месяцев\n\n"
 #     sleeps_text = ""
 #     for i in range(len(sleeps)):
 #         sleeps_text += f"\n{i+1} сон: {sleeps[i]['start_sleep_time'][:5]} - {sleeps[i]['end_sleep_time'][:5]}"
@@ -146,13 +146,13 @@ async def menu(message: Message, state: FSMContext):
 
 # #     child = childapi.read(user_id=message.from_user.id)
 # #     child_name = child.get("name")
-# #     child_age = child.get("age")
+# #     age = child.get("age")
 # #     current_date = datetime.now()
 # #     data = await state.get_data()
 # #     end_night_time = data.get("end_night")
 # #     sleeps = []
 # #     start_night_time = data.get("start_night")
-# #     html_child_info_text = f"👶 <b>{child_name}</b> - {child_age} месяцев\n\n"
+# #     html_child_info_text = f"👶 <b>{child_name}</b> - {age} месяцев\n\n"
 # #     scheduleapi.create(
 # #         message.from_user.id,
 # #         current_date.strftime("%Y-%m-%d"),
@@ -184,7 +184,7 @@ async def menu(message: Message, state: FSMContext):
 # #         text=html_child_info_text + html_schedule_text,
 # #         reply_markup=keyboard.as_markup(),
 # #     )
-# #     average_duration = ideal_data.ideal_data[child_age]["day"]["activity"][
+# #     average_duration = ideal_data.ideal_data[age]["day"]["activity"][
 # #         "average_duration"
 # #     ]
 # #     average_duration = sum(average_duration) / len(average_duration)
@@ -231,7 +231,7 @@ async def menu(message: Message, state: FSMContext):
 #     end_sleep = datetime.strptime(
 #         current_date + " " + end_sleep, "%Y-%m-%d %H:%M"
 #     ).replace(tzinfo=pytz.timezone("Etc/GMT-3"))
-#     child_age = childapi.read(user_id=message.from_user.id)["age"]
+#     age = childapi.read(user_id=message.from_user.id)["age"]
 #     sleep = [
 #         {
 #             "start_sleep_time": start_sleep.strftime("%H:%M"),
@@ -242,10 +242,10 @@ async def menu(message: Message, state: FSMContext):
 #         }
 #     ]
 #     recommendation = compare_day_sleep(
-#         sleep, child_age=child_age, idealdata=ideal_data.ideal_data
+#         sleep, age=age, idealdata=ideal_data.ideal_data
 #     )
 #     current_time = datetime.now(pytz.timezone("Etc/GMT-3"))
-#     ideal_time = ideal_data.ideal_data[child_age]["day"]["activity"]["average_duration"]
+#     ideal_time = ideal_data.ideal_data[age]["day"]["activity"]["average_duration"]
 
 #     ideal_time_left = ideal_time[0]
 #     ideal_time_right = ideal_time[1]

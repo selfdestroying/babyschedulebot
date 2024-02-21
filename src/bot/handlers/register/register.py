@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import pytz
 from aiogram import F, Router
@@ -27,8 +27,8 @@ from src.bot.handlers.register.helpers import (
 from src.bot.keyboards.menu import MENU_KEYBOARD
 from src.bot.keyboards.night import get_rate_kb
 from src.bot.keyboards.register import (
-    CHILD_GENDER_KEYBOARD,
     FOOD_TYPE_KEYBOARD,
+    GENDER_KEYBOARD,
     REGISTER_CONFIRM_KEYBOARD,
     SEND_PHONE_KEYBOARD,
     get_calendar_keyboard,
@@ -36,8 +36,9 @@ from src.bot.keyboards.register import (
 from src.config import conf
 from src.phrases import ru
 from src.utils.differences import (
-    calculate_child_age_in_months,
+    calculate_age_in_months,
 )
+from src.utils.remind import calculate_time_to_remind
 
 register_router = Router(name="register")
 
@@ -47,7 +48,7 @@ async def user_problem(message: Message, state: FSMContext) -> None:
     await state.update_data(user_problem=message.text)
     await state.set_state(RegisterGroup.confirmation)
     await message.answer(ru.ABOUT_2)
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
     await message.answer(ru.REGISTER_CONFIRM, reply_markup=REGISTER_CONFIRM_KEYBOARD)
 
 
@@ -79,10 +80,10 @@ async def user_phone_wrong(message: Message, state: FSMContext):
 @register_router.message(RegisterGroup.user_email, EmailFilter())
 async def user_email(message: Message, state: FSMContext):
     await state.update_data(user_email=message.text)
-    await state.set_state(RegisterGroup.child_name)
+    await state.set_state(RegisterGroup.gender)
     await message.answer(ru.ABOUT_3)
-    await asyncio.sleep(1)
-    await message.answer(ru.ASK_CHILD_NAME)
+    await asyncio.sleep(2)
+    await message.answer(ru.ASK_GENDER, reply_markup=GENDER_KEYBOARD)
 
 
 @register_router.message(RegisterGroup.user_email)
@@ -90,29 +91,28 @@ async def user_email_wrong(message: Message, state: FSMContext):
     await message.answer(ru.ASK_EMAIL)
 
 
+@register_router.callback_query(RegisterGroup.gender, F.data.in_(["male", "female"]))
+async def gender(callback_query: CallbackQuery, state: FSMContext):
+    await state.update_data(gender=callback_query.data)
+    await state.set_state(RegisterGroup.child_name)
+    await callback_query.message.edit_text(
+        "Девочка" if gender == "female" else "Мальчик"
+    )
+    await callback_query.message.answer(ru.ASK_CHILD_NAME)
+    await callback_query.answer()
+
+
 @register_router.message(RegisterGroup.child_name, F.text)
 async def child_name(message: Message, state: FSMContext):
-    await state.update_data(child_name=message.text)
-    await state.set_state(RegisterGroup.child_gender)
-    await message.answer(ru.ASK_CHILD_GENDER, reply_markup=CHILD_GENDER_KEYBOARD)
-
-
-@register_router.callback_query(
-    RegisterGroup.child_gender, F.data.in_(["male", "female"])
-)
-async def child_gender(callback_query: CallbackQuery, state: FSMContext):
-    child_gender = callback_query.data
-    child_name = (await state.get_data())["child_name"]
-    await state.update_data(child_gender=child_gender)
+    data = await state.get_data()
+    gender = data["gender"]
+    child_name = message.text
+    await state.update_data(child_name=child_name)
     await state.set_state(RegisterGroup.child_birth_date)
-    await callback_query.message.edit_text(
-        "Девочка" if child_gender == "female" else "Мальчик"
-    )
-    await callback_query.message.answer(
-        ru.ASK_CHILD_BIRTH_DATE[child_gender].format(child_name),
+    await message.answer(
+        ru.ASK_CHILD_BIRTH_DATE[gender].format(child_name),
         reply_markup=await get_calendar_keyboard(),
     )
-    await callback_query.answer()
 
 
 @register_router.callback_query(DialogCalendarCallback.filter())
@@ -130,10 +130,10 @@ async def process_child_birth_date(
             )
         else:
             date = date.strftime("%Y-%m-%d")
-            child_age = calculate_child_age_in_months(date)
-            ideal_data_for_age = ideal_data.ideal_data[child_age]
+            age = calculate_age_in_months(date)
+            ideal_data_for_age = ideal_data.ideal_data[age]
             await state.update_data(child_birth_date=date)
-            await state.update_data(child_age=child_age)
+            await state.update_data(age=age)
             await state.update_data(ideal_data_for_age=ideal_data_for_age)
             await state.set_state(RegisterGroup.food_type)
             await callback_query.message.edit_text(date)
@@ -159,17 +159,15 @@ async def food_type(callback_query: CallbackQuery, state: FSMContext):
         else "Грудь и смесь"
     )
     await callback_query.message.answer(ru.ABOUT_4)
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
     await callback_query.message.answer(ru.ABOUT_5)
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
     await callback_query.message.answer(ru.ABOUT_6)
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
     await callback_query.message.answer(ru.ASK_PREV_NIGHT)
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
     await callback_query.message.answer(
-        ru.ASK_PREV_NIGHT_START_SLEEP[data.get("child_gender")].format(
-            data.get("child_name")
-        )
+        ru.ASK_PREV_NIGHT_START_SLEEP[data.get("gender")].format(data.get("child_name"))
     )
     await callback_query.answer()
 
@@ -179,19 +177,19 @@ async def food_type(callback_query: CallbackQuery, state: FSMContext):
 #     current_state = await state.get_state()
 
 #     print(current_state)
-#     if current_state == "RegisterGroup:child_gender":
+#     if current_state == "RegisterGroup:gender":
 #         await state.set_state(RegisterGroup.child_name)
 #         await message.answer(ru.ASK_CHILD_NAME)
 #     elif current_state == "RegisterGroup:child_birth_date":
-#         await state.set_state(RegisterGroup.child_gender)
-#         await message.answer(ru.ASK_CHILD_GENDER, reply_markup=CHILD_GENDER_KEYBOARD)
+#         await state.set_state(RegisterGroup.gender)
+#         await message.answer(ru.ASK_gender, reply_markup=gender_KEYBOARD)
 #     elif current_state == "RegisterGroup:food_type":
 #         data = await state.get_data()
 #         child_name = data["child_name"]
-#         child_gender = data["child_gender"]
+#         gender = data["gender"]
 #         await state.set_state(RegisterGroup.child_birth_date)
 #         await message.answer(
-#             ru.ASK_CHILD_BIRTH_DATE[child_gender].format(child_name),
+#             ru.ASK_CHILD_BIRTH_DATE[gender].format(child_name),
 #             reply_markup=await get_calendar_keyboard(),
 #         )
 #     elif current_state == "RegisterGroup:end_night_time":
@@ -202,12 +200,12 @@ async def food_type(callback_query: CallbackQuery, state: FSMContext):
 @register_router.message(RegisterGroup.start_night_time, TimeFilter())
 async def start_night_time(message: Message, state: FSMContext):
     data = await state.get_data()
-    child_gender = data["child_gender"]
+    gender = data["gender"]
     child_name = data["child_name"]
     await state.update_data(start_night_time=message.text + ":00")
     await state.set_state(RegisterGroup.end_night_time)
     await message.answer(
-        ru.ASK_PREV_NIGHT_END_SLEEP[child_gender].format(child_name),
+        ru.ASK_PREV_NIGHT_END_SLEEP[gender].format(child_name),
         reply_markup=ReplyKeyboardRemove(),
     )
 
@@ -216,10 +214,10 @@ async def start_night_time(message: Message, state: FSMContext):
 async def end_night_time(message: Message, state: FSMContext):
     data = await state.get_data()
     child_name = data["child_name"]
-    child_gender = data["child_gender"]
+    gender = data["gender"]
     await state.update_data(end_night_time=message.text + ":00")
     await state.set_state(RegisterGroup.night_wake_up_count)
-    await message.answer(ru.ASK_NIGHT_WAKE_UP_COUNT[child_gender].format(child_name))
+    await message.answer(ru.ASK_NIGHT_WAKE_UP_COUNT[gender].format(child_name))
 
 
 @register_router.message(RegisterGroup.start_night_time)
@@ -239,8 +237,8 @@ async def night_wake_up_count(message: Message, state: FSMContext):
 async def night_wake_up_count_wrong(message: Message, state: FSMContext):
     data = await state.get_data()
     child_name = data["child_name"]
-    child_gender = data["child_gender"]
-    await message.answer(ru.ASK_NIGHT_WAKE_UP_COUNT[child_gender].format(child_name))
+    gender = data["gender"]
+    await message.answer(ru.ASK_NIGHT_WAKE_UP_COUNT[gender].format(child_name))
 
 
 @register_router.callback_query(
@@ -259,45 +257,36 @@ async def night_rating(
         await callback_query.message.answer(ru.NIGHT_RATING_5_7)
     elif 8 <= night_rating <= 10:
         await callback_query.message.answer(ru.NIGHT_RATING_8_10)
-    data = await state.get_data()
-    print(data)
-    child_name = data.get("child_name")
-    child_gender = data.get("child_gender")
-    current_date = datetime.now(pytz.timezone("Etc/GMT-3"))
-    end_night_time = datetime.strptime(
-        f'{current_date.strftime("%Y-%m-%d")} {data.get("end_night_time")}',
-        "%Y-%m-%d %H:%M:%S",
-    ).replace(tzinfo=pytz.timezone("Etc/GMT-3"))
 
-    ideal_data_for_age = data.get("ideal_data_for_age")["day"]["activity"][
+    data = await state.get_data()
+    child_name = data.get("child_name")
+    gender = data.get("gender")
+    age = data.get("age")
+    wake_up_time = data.get("end_night_time")
+    message_send_time = datetime.now(pytz.timezone("Etc/GMT-3")).strftime("%H:%M:%S")
+    average_activity_duration = ideal_data.ideal_data[age]["day"]["activity"][
         "average_duration"
     ]
-
-    ideal_time_left = ideal_data_for_age[0]
-    ideal_time_right = ideal_data_for_age[1]
-
-    next_sleep_start_left = end_night_time + timedelta(minutes=ideal_time_left)
-    next_sleep_start_right = end_night_time + timedelta(minutes=ideal_time_right)
-
-    if (current_date - end_night_time) < timedelta(minutes=30):
+    time_to_remind = calculate_time_to_remind(
+        wake_up_time, message_send_time, average_activity_duration
+    )
+    if time_to_remind:
         await callback_query.message.answer(
-            ru.GOOD_MORNING[child_gender].format(
+            ru.GOOD_MORNING[gender].format(
                 child_name,
-                end_night_time.strftime("%H:%M"),
-                round(ideal_time_left / 60, 1),
-                round(ideal_time_right / 60, 1),
-                next_sleep_start_left.strftime("%H:%M"),
-                next_sleep_start_right.strftime("%H:%M"),
+                wake_up_time[:5],
+                time_to_remind["activity_duration_min"],
+                time_to_remind["activity_duration_max"],
+                time_to_remind["next_fall_asleep_time_min"],
+                time_to_remind["next_fall_asleep_time_max"],
             )
         )
-        # TODO: replace minutes from 1 to next sleep time
         day_fall_asleep_job_id: Job = await arqredis.enqueue_job(
             "send_message",
-            _defer_by=(next_sleep_start_left - current_date).seconds,
+            _defer_by=time_to_remind["time_to_remind"],
             chat_id=callback_query.from_user.id,
             text="Уснули?",
         )
-        print(await day_fall_asleep_job_id.status())
         await state.update_data(day_fall_asleep_job_id=day_fall_asleep_job_id.job_id)
     await callback_query.message.answer(
         ru.PRESS_END_DAY_SLEEP_BUTTON, reply_markup=MENU_KEYBOARD
@@ -318,9 +307,9 @@ async def night_rating(
 #         f"{current_date} {end_night_time}", "%Y-%m-%d %H:%M"
 #     ).replace(tzinfo=pytz.timezone("Etc/GMT-3"))
 #     current_time = datetime.now(pytz.timezone("Etc/GMT-3"))
-#     child_age = childapi.read(user_id=message.from_user.id)["age"]
+#     age = childapi.read(user_id=message.from_user.id)["age"]
 
-#     ideal_time = ideal_data.ideal_data[child_age]["day"]["activity"]["average_duration"]
+#     ideal_time = ideal_data.ideal_data[age]["day"]["activity"]["average_duration"]
 
 #     ideal_time_left = ideal_time[0]
 #     ideal_time_right = ideal_time[1]

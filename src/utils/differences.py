@@ -51,7 +51,7 @@ def get_days_in_month(month, year):
         return 31
 
 
-def calculate_child_age_in_months(birth_date: str):
+def calculate_age_in_months(birth_date: str):
     current_date = datetime.today()
     birth_date = datetime.strptime(birth_date, "%Y-%m-%d")
     years = current_date.year - birth_date.year

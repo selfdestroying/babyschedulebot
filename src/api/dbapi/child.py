@@ -14,7 +14,7 @@ def create(
             supabase.table("childs")
             .insert(
                 {
-                    "name": name,
+                    "child_name": name,
                     "gender": gender,
                     "birth_date": birth_date,
                     "age": age,
@@ -49,7 +49,7 @@ def update(
     try:
         data = {}
         if name:
-            data["name"] = name
+            data["child_name"] = name
         if gender:
             data["gender"] = gender
         if birth_date:
@@ -62,7 +62,7 @@ def update(
             supabase.table("childs")
             .update(data)
             .eq("user_id", user_id)
-            .eq("name", name)
+            .eq("child_name", name)
             .execute()
         )
         return response.data[0]
@@ -76,7 +76,7 @@ def delete(user_id: int, name: str) -> dict | list:
             supabase.table("childs")
             .delete()
             .eq("user_id", user_id)
-            .eq("name", name)
+            .eq("child_name", name)
             .execute()
         )
         return response.data[0]
